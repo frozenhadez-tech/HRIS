@@ -1,0 +1,202 @@
+// HRIS — Prisma schema
+// Multi-tenant model: every tenant-scoped row carries `organizationId`.
+// Tenant isolation is enforced in the application query layer (see src/lib/tenant.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7: connection URL lives in prisma.config.ts (for the CLI) and is
+  // passed to PrismaClient via the pg driver adapter (see src/lib/prisma.ts).
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN // reserved for platform operators (cross-tenant)
+  ORG_ADMIN // full control within one organization
+  HR_MANAGER // manage employees, departments, users
+  MANAGER // view/manage own team
+  EMPLOYEE // self-service only
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+  PENDING
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+  TEMPORARY
+}
+
+// ---------------------------------------------------------------------------
+// Tenant root
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  timezone  String   @default("UTC")
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  employees   Employee[]
+  departments Department[]
+  auditLogs   AuditLog[]
+}
+
+// ---------------------------------------------------------------------------
+// Auth / access
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  email        String
+  passwordHash String
+  role         UserRole   @default(EMPLOYEE)
+  status       UserStatus @default(ACTIVE)
+
+  // Optional 1:1 link to an employee profile (drives self-service).
+  employee   Employee? @relation("EmployeeUser", fields: [employeeId], references: [id])
+  employeeId String?   @unique
+
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+}
+
+// ---------------------------------------------------------------------------
+// Organizational structure
+// ---------------------------------------------------------------------------
+
+model Department {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  // Self-referential hierarchy (department tree).
+  parentId String?
+  parent   Department?  @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children Department[] @relation("DeptHierarchy")
+
+  // Department head (an employee).
+  headId String?
+  head   Employee? @relation("DeptHead", fields: [headId], references: [id])
+
+  employees Employee[] @relation("DeptEmployees")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([parentId])
+}
+
+// ---------------------------------------------------------------------------
+// Employee records
+// ---------------------------------------------------------------------------
+
+model Employee {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeNumber String
+  firstName      String
+  lastName       String
+  email          String
+  phone          String?
+  dateOfBirth    DateTime?
+  gender         String?
+
+  // Address
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
+
+  // Employment
+  jobTitle        String?
+  employmentType  EmploymentType @default(FULL_TIME)
+  status          EmployeeStatus @default(ACTIVE)
+  hireDate        DateTime?
+  terminationDate DateTime?
+
+  departmentId String?
+  department   Department? @relation("DeptEmployees", fields: [departmentId], references: [id])
+
+  // Reporting line (manager hierarchy / org chart).
+  managerId String?
+  manager   Employee?  @relation("EmpHierarchy", fields: [managerId], references: [id])
+  reports   Employee[] @relation("EmpHierarchy")
+
+  headedDepartments Department[] @relation("DeptHead")
+  user              User?        @relation("EmployeeUser")
+
+  // Emergency contact
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, employeeNumber])
+  @@index([organizationId])
+  @@index([organizationId, departmentId])
+  @@index([organizationId, managerId])
+}
+
+// ---------------------------------------------------------------------------
+// Audit trail (compliance — a single source of truth for "who did what")
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  action     String // e.g. "employee.create"
+  entityType String // e.g. "Employee"
+  entityId   String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+}
