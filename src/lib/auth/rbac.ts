@@ -49,4 +49,6 @@ export const can = {
   // Payroll
   managePayroll: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
   viewCompensation: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
+  // Benefits
+  manageBenefits: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
 };

@@ -20,6 +20,8 @@ import {
   CalendarRange,
   Wallet,
   Receipt,
+  HeartPulse,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
@@ -59,6 +61,13 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/payroll", label: "Payroll", icon: Wallet, min: "HR_MANAGER" },
       { href: "/payslips", label: "My payslips", icon: Receipt, min: "EMPLOYEE" },
+    ],
+  },
+  {
+    label: "Benefits",
+    items: [
+      { href: "/benefits", label: "Benefits", icon: HeartPulse, min: "EMPLOYEE" },
+      { href: "/benefits/plans", label: "Benefit plans", icon: ClipboardList, min: "HR_MANAGER" },
     ],
   },
   {

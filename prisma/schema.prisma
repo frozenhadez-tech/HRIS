@@ -71,6 +71,9 @@ model Organization {
   shiftAssignments ShiftAssignment[]
   payrollRuns      PayrollRun[]
   payslips         Payslip[]
+  benefitPlans       BenefitPlan[]
+  benefitEnrollments BenefitEnrollment[]
+  dependents         Dependent[]
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +200,9 @@ model Employee {
   monthlySalary    Float @default(0)
   monthlyAllowance Float @default(0)
 
-  payslips Payslip[]
+  payslips           Payslip[]
+  benefitEnrollments BenefitEnrollment[]
+  dependents         Dependent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -454,4 +459,96 @@ model Payslip {
 
   @@unique([payrollRunId, employeeId])
   @@index([organizationId, employeeId])
+}
+
+// ---------------------------------------------------------------------------
+// Benefits administration (Milestone 4)
+// ---------------------------------------------------------------------------
+
+enum BenefitType {
+  HEALTH
+  LIFE
+  RETIREMENT
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  CANCELLED
+}
+
+enum DependentRelation {
+  SPOUSE
+  CHILD
+  PARENT
+  OTHER
+}
+
+model BenefitPlan {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  type        BenefitType
+  name        String
+  provider    String?
+  description String?
+
+  coverageAmount       Float? // e.g. life sum assured / HMO max benefit limit
+  employeeContribution Float  @default(0) // monthly, reference only
+  employerContribution Float  @default(0) // monthly, reference only
+  isActive             Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments BenefitEnrollment[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Dependent {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  firstName   String
+  lastName    String
+  relation    DependentRelation
+  dateOfBirth DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments BenefitEnrollment[] @relation("EnrollmentDependents")
+
+  @@index([organizationId])
+  @@index([employeeId])
+}
+
+model BenefitEnrollment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  planId     String
+  plan       BenefitPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
+  cancelledAt DateTime?
+  notes       String?
+
+  coveredDependents Dependent[] @relation("EnrollmentDependents")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, planId])
+  @@index([organizationId])
 }

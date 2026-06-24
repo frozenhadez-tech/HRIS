@@ -4,6 +4,9 @@ import type {
   UserStatus,
   LeaveRequestStatus,
   PayrollStatus,
+  BenefitType,
+  EnrollmentStatus,
+  DependentRelation,
 } from "@prisma/client";
 
 export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
@@ -39,6 +42,30 @@ export const PAYROLL_STATUS_LABELS: Record<PayrollStatus, string> = {
   FINALIZED: "Finalized",
   PAID: "Paid",
 };
+
+export const BENEFIT_TYPE_LABELS: Record<BenefitType, string> = {
+  HEALTH: "Health / HMO",
+  LIFE: "Life insurance",
+  RETIREMENT: "Retirement / Provident",
+};
+
+export const BENEFIT_TYPES = Object.keys(BENEFIT_TYPE_LABELS) as BenefitType[];
+
+export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
+  ACTIVE: "Active",
+  CANCELLED: "Cancelled",
+};
+
+export const DEPENDENT_RELATION_LABELS: Record<DependentRelation, string> = {
+  SPOUSE: "Spouse",
+  CHILD: "Child",
+  PARENT: "Parent",
+  OTHER: "Other",
+};
+
+export const DEPENDENT_RELATIONS = Object.keys(
+  DEPENDENT_RELATION_LABELS,
+) as DependentRelation[];
 
 export const EMPLOYMENT_TYPES = Object.keys(
   EMPLOYMENT_TYPE_LABELS,

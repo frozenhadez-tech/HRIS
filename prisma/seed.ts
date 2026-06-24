@@ -295,7 +295,62 @@ async function main() {
     ],
   });
 
+  // --- Benefits ---
+  const hmo = await prisma.benefitPlan.create({
+    data: {
+      organizationId: org.id,
+      type: "HEALTH",
+      name: "Maxicare Plan A",
+      provider: "Maxicare",
+      description: "Comprehensive HMO; dependents may be covered.",
+      coverageAmount: 200000,
+      employeeContribution: 500,
+      employerContribution: 1500,
+    },
+  });
+  await prisma.benefitPlan.create({
+    data: {
+      organizationId: org.id,
+      type: "LIFE",
+      name: "Group Life (₱1M)",
+      provider: "Sun Life",
+      coverageAmount: 1000000,
+      employeeContribution: 0,
+      employerContribution: 300,
+    },
+  });
+  await prisma.benefitPlan.create({
+    data: {
+      organizationId: org.id,
+      type: "RETIREMENT",
+      name: "Provident Fund",
+      description: "Company provident/retirement fund.",
+      employeeContribution: 1000,
+      employerContribution: 1000,
+    },
+  });
+  const noahSpouse = await prisma.dependent.create({
+    data: {
+      organizationId: org.id,
+      employeeId: noah.id,
+      firstName: "Mia",
+      lastName: "Patel",
+      relation: "SPOUSE",
+      dateOfBirth: new Date("1992-03-14"),
+    },
+  });
+  await prisma.benefitEnrollment.create({
+    data: {
+      organizationId: org.id,
+      employeeId: noah.id,
+      planId: hmo.id,
+      status: "ACTIVE",
+      coveredDependents: { connect: { id: noahSpouse.id } },
+    },
+  });
+
   console.log(`\nSeeded "${org.name}" with ${seq} employees and ${accounts.length} login accounts.`);
+  console.log("Benefits: 3 plans, 1 dependent, 1 enrollment.");
   console.log("Time & attendance: 3 leave types, balances, leave requests, time entries, 2 shifts.");
   console.log("Login at /login with any of these (password: Password123!):");
   for (const [email, role] of accounts) console.log(`  ${role.padEnd(11)} ${email}`);

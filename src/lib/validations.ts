@@ -261,3 +261,40 @@ export const payslipAdjustSchema = z.object({
   otherDeductions: z.coerce.number().min(0, "Must be 0 or more."),
   notes: optionalText,
 });
+
+// ---------------------------------------------------------------------------
+// Benefits (Milestone 4)
+// ---------------------------------------------------------------------------
+
+const optionalNumber = z.preprocess((v) => {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "string" && v.trim() === "") return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}, z.number().nullable()) as z.ZodType<number | null>;
+
+export const benefitTypeEnum = z.enum(["HEALTH", "LIFE", "RETIREMENT"]);
+export const dependentRelationEnum = z.enum([
+  "SPOUSE",
+  "CHILD",
+  "PARENT",
+  "OTHER",
+]);
+
+export const benefitPlanSchema = z.object({
+  type: benefitTypeEnum,
+  name: z.string().trim().min(2, "Name is required."),
+  provider: optionalText,
+  description: optionalText,
+  coverageAmount: optionalNumber,
+  employeeContribution: z.coerce.number().min(0, "Must be 0 or more.").default(0),
+  employerContribution: z.coerce.number().min(0, "Must be 0 or more.").default(0),
+  isActive: checkbox,
+});
+
+export const dependentSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required."),
+  lastName: z.string().trim().min(1, "Last name is required."),
+  relation: dependentRelationEnum,
+  dateOfBirth: optionalDate,
+});
