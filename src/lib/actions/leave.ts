@@ -19,7 +19,6 @@ import {
   messageFor,
   assertEmployeeInOrg,
   getLeaveTypeInOrg,
-  grantLeaveBalances,
 } from "./_server";
 
 /** Holiday date keys for an org (excluded from leave day counts). */
@@ -440,9 +439,11 @@ export async function updateLeaveType(
 }
 
 /**
- * Bulk-grant a year's paid-leave balances to every (non-terminated) employee
- * from each paid leave type's default allocation. Idempotent — existing
- * balances are left untouched, so it's safe to re-run.
+ * Bulk-grant a year's paid-leave balances to every (non-terminated) employee.
+ * The day count per leave type comes from the form (`days_<leaveTypeId>`),
+ * defaulting to the type's default allocation when blank/invalid. Creates
+ * missing balances and updates existing ones to the chosen allocation, but
+ * preserves each balance's used days. Safe to re-run.
  */
 export async function grantAnnualCredits(formData: FormData): Promise<void> {
   const user = await authorize("HR_MANAGER");
@@ -452,21 +453,62 @@ export async function grantAnnualCredits(formData: FormData): Promise<void> {
       ? yearRaw
       : new Date().getFullYear();
 
-  const employees = await prisma.employee.findMany({
-    where: { organizationId: user.organizationId, status: { not: "TERMINATED" } },
-    select: { id: true },
-  });
-  const created = await grantLeaveBalances(
-    user.organizationId,
-    employees.map((e) => e.id),
-    year,
-  );
+  const [employees, paidTypes] = await Promise.all([
+    prisma.employee.findMany({
+      where: {
+        organizationId: user.organizationId,
+        status: { not: "TERMINATED" },
+      },
+      select: { id: true },
+    }),
+    prisma.leaveType.findMany({
+      where: { organizationId: user.organizationId, isActive: true, paid: true },
+      select: { id: true, defaultAllocationDays: true },
+    }),
+  ]);
+  const employeeIds = employees.map((e) => e.id);
+
+  if (employeeIds.length > 0) {
+    for (const t of paidTypes) {
+      const raw = formData.get(`days_${t.id}`);
+      const n = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : NaN;
+      const days = Number.isFinite(n)
+        ? Math.min(365, Math.max(0, Math.round(n)))
+        : t.defaultAllocationDays;
+
+      // Create missing balances at the chosen allocation, then align existing
+      // rows to it — without touching their used days.
+      await prisma.$transaction([
+        prisma.leaveBalance.createMany({
+          data: employeeIds.map((employeeId) => ({
+            organizationId: user.organizationId,
+            employeeId,
+            leaveTypeId: t.id,
+            year,
+            allocatedDays: days,
+            usedDays: 0,
+          })),
+          skipDuplicates: true,
+        }),
+        prisma.leaveBalance.updateMany({
+          where: {
+            organizationId: user.organizationId,
+            leaveTypeId: t.id,
+            year,
+            employeeId: { in: employeeIds },
+          },
+          data: { allocatedDays: days },
+        }),
+      ]);
+    }
+  }
+
   await writeAudit({
     organizationId: user.organizationId,
     userId: user.id,
     action: "leave.balance.grant",
     entityType: "LeaveBalance",
-    metadata: { year, employees: employees.length, created },
+    metadata: { year, employees: employeeIds.length, types: paidTypes.length },
   });
   revalidatePath("/leave/balances");
   redirect("/leave/balances");

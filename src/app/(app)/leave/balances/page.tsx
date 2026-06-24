@@ -8,6 +8,8 @@ import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { fullName } from "@/lib/utils";
 import { grantAnnualCredits } from "@/lib/actions/leave";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Field } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { BalanceForm } from "./balance-form";
 
 export default async function BalancesPage() {
@@ -24,7 +26,7 @@ export default async function BalancesPage() {
     prisma.leaveType.findMany({
       where: { organizationId: orgId, isActive: true, paid: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: { id: true, name: true, defaultAllocationDays: true },
     }),
     prisma.leaveBalance.findMany({
       where: { organizationId: orgId },
@@ -46,15 +48,41 @@ export default async function BalancesPage() {
       <Card className="mb-6">
         <CardHeader
           title="Grant annual credits"
-          description={`Create ${year} balances for every employee from each paid leave type's default allocation. Existing balances are left untouched, so this is safe to re-run.`}
+          description={`Set how many days each paid leave type gives for ${year}, then grant to every employee. Used days are preserved; existing balances are updated to the amount you choose.`}
         />
         <CardBody>
-          <form action={grantAnnualCredits}>
-            <input type="hidden" name="year" defaultValue={year} />
-            <SubmitButton pendingText="Granting…">
-              Grant {year} credits to all employees
-            </SubmitButton>
-          </form>
+          {leaveTypes.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              Add a paid leave type first to grant credits.
+            </p>
+          ) : (
+            <form action={grantAnnualCredits} className="space-y-4">
+              <input type="hidden" name="year" defaultValue={year} />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {leaveTypes.map((t) => (
+                  <Field
+                    key={t.id}
+                    label={`${t.name} (days)`}
+                    htmlFor={`days_${t.id}`}
+                  >
+                    <Input
+                      id={`days_${t.id}`}
+                      name={`days_${t.id}`}
+                      type="number"
+                      min={0}
+                      max={365}
+                      defaultValue={t.defaultAllocationDays}
+                    />
+                  </Field>
+                ))}
+              </div>
+              <div className="flex justify-end">
+                <SubmitButton pendingText="Granting…">
+                  Grant {year} credits to all employees
+                </SubmitButton>
+              </div>
+            </form>
+          )}
         </CardBody>
       </Card>
 
