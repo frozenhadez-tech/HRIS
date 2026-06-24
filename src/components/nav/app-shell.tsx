@@ -23,6 +23,7 @@ import {
   HeartPulse,
   ClipboardList,
   Bell,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
@@ -70,6 +71,12 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/benefits", label: "Benefits", icon: HeartPulse, min: "EMPLOYEE" },
       { href: "/benefits/plans", label: "Benefit plans", icon: ClipboardList, min: "HR_MANAGER" },
+    ],
+  },
+  {
+    label: "Reports",
+    items: [
+      { href: "/reports", label: "Employee report", icon: FileText, min: "MANAGER" },
     ],
   },
   {

@@ -71,6 +71,19 @@ body {
     break-inside: avoid;
     page-break-inside: avoid;
   }
+  /* Employee report: keep summary/breakdown blocks whole across page breaks,
+     but let the roster table flow across pages with its header repeating. */
+  .report-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-roster tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-roster thead {
+    display: table-header-group;
+  }
   /* Keep background colors (net-pay highlight, badges). */
   * {
     -webkit-print-color-adjust: exact;
