@@ -57,7 +57,15 @@ export default async function PayslipPage({
                 allowance: slip.allowance,
                 overtimeHours: slip.overtimeHours,
                 otherEarnings: slip.otherEarnings,
+                sss: slip.sss,
+                philHealth: slip.philHealth,
+                pagIbig: slip.pagIbig,
+                withholdingTax: slip.withholdingTax,
+                absenceDeduction: slip.absenceDeduction,
                 otherDeductions: slip.otherDeductions,
+                sssEr: slip.sssEr,
+                philHealthEr: slip.philHealthEr,
+                pagIbigEr: slip.pagIbigEr,
                 notes: slip.notes,
               }}
             />

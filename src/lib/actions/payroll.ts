@@ -155,8 +155,21 @@ export async function updatePayslip(
 ): Promise<ActionState> {
   const parsed = payslipAdjustSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToState(parsed.error);
-  const { allowance, overtimeHours, otherEarnings, otherDeductions, notes } =
-    parsed.data;
+  const {
+    allowance,
+    overtimeHours,
+    otherEarnings,
+    sss,
+    philHealth,
+    pagIbig,
+    withholdingTax,
+    absenceDeduction,
+    otherDeductions,
+    sssEr,
+    philHealthEr,
+    pagIbigEr,
+    notes,
+  } = parsed.data;
 
   let runId: string;
   try {
@@ -182,23 +195,26 @@ export async function updatePayslip(
     );
     const grossPay = r2(slip.basicPay + allowance + overtimePay + otherEarnings);
     const totalDeductions = r2(
-      slip.sss +
-        slip.philHealth +
-        slip.pagIbig +
-        slip.withholdingTax +
-        slip.absenceDeduction +
-        otherDeductions,
+      sss + philHealth + pagIbig + withholdingTax + absenceDeduction + otherDeductions,
     );
     const netPay = r2(grossPay - totalDeductions);
 
     await prisma.payslip.update({
-      where: { id: payslipId },
+      where: { id: payslipId, organizationId: user.organizationId },
       data: {
         allowance,
         overtimeHours,
         overtimePay,
         otherEarnings,
+        sss,
+        philHealth,
+        pagIbig,
+        withholdingTax,
+        absenceDeduction,
         otherDeductions,
+        sssEr,
+        philHealthEr,
+        pagIbigEr,
         notes,
         grossPay,
         totalDeductions,

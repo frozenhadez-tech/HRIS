@@ -269,11 +269,24 @@ export const payrollRunSchema = z
     path: ["periodEnd"],
   });
 
+const money = z.coerce.number().min(0, "Must be 0 or more.");
+
 export const payslipAdjustSchema = z.object({
-  allowance: z.coerce.number().min(0, "Must be 0 or more."),
-  overtimeHours: z.coerce.number().min(0, "Must be 0 or more."),
-  otherEarnings: z.coerce.number().min(0, "Must be 0 or more."),
-  otherDeductions: z.coerce.number().min(0, "Must be 0 or more."),
+  // Earnings
+  allowance: money,
+  overtimeHours: money,
+  otherEarnings: money,
+  // Deductions (employee share) — overridable
+  sss: money,
+  philHealth: money,
+  pagIbig: money,
+  withholdingTax: money,
+  absenceDeduction: money,
+  otherDeductions: money,
+  // Employer contributions (informational)
+  sssEr: money,
+  philHealthEr: money,
+  pagIbigEr: money,
   notes: optionalText,
 });
 
