@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { PayslipView } from "@/components/payslip-view";
+import { PrintButton } from "@/components/print-button";
 import { PayslipEditForm } from "./payslip-edit-form";
 
 export default async function PayslipPage({
@@ -30,22 +31,29 @@ export default async function PayslipPage({
     <div>
       <Link
         href={`/payroll/${id}`}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 print:hidden"
       >
         <ArrowLeft className="h-4 w-4" /> Back to run
       </Link>
 
-      <PageHeader title="Payslip" description={slip.payrollRun.label} />
+      <div className="print:hidden">
+        <PageHeader
+          title="Payslip"
+          description={slip.payrollRun.label}
+          action={<PrintButton />}
+        />
+      </div>
 
       <PayslipView
         slip={slip}
         employee={slip.employee}
         run={slip.payrollRun}
         currency={user.organization.currency}
+        orgName={user.organization.name}
       />
 
       {slip.payrollRun.status === "DRAFT" && (
-        <Card className="mt-6">
+        <Card className="mt-6 print:hidden">
           <CardHeader
             title="Adjustments"
             description="Edit allowance, overtime, and other items — totals recompute on save."

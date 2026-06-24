@@ -31,6 +31,7 @@ export function PayslipView({
   employee,
   run,
   currency,
+  orgName,
 }: {
   slip: Payslip;
   employee: Pick<
@@ -42,11 +43,21 @@ export function PayslipView({
     "label" | "frequency" | "periodStart" | "periodEnd" | "payDate"
   >;
   currency: string;
+  orgName: string;
 }) {
   const c = (n: number) => formatCurrency(n, currency);
 
   return (
     <div className="space-y-6">
+      <div className="border-b border-slate-200 pb-4 text-center">
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          {orgName}
+        </h2>
+        <p className="mt-1 text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
+          Payslip
+        </p>
+      </div>
+
       <Card>
         <CardBody className="flex flex-wrap items-center justify-between gap-4">
           <div>

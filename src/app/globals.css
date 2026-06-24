@@ -21,3 +21,14 @@ body {
   outline: 2px solid #6366f1; /* indigo-500 */
   outline-offset: 2px;
 }
+
+/* Print: white page, keep background colors (net-pay highlight, badges). */
+@media print {
+  body {
+    background-color: #ffffff;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

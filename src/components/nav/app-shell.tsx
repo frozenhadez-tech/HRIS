@@ -215,7 +215,7 @@ export function AppShell({
   return (
     <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block print:hidden">
         <SidebarBody
           user={user}
           orgName={orgName}
@@ -245,8 +245,8 @@ export function AppShell({
       )}
 
       {/* Main column */}
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden">
+      <div className="lg:pl-64 print:pl-0">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden print:hidden">
           <button
             aria-label="Open menu"
             onClick={() => setMobileOpen(true)}
@@ -256,7 +256,7 @@ export function AppShell({
           </button>
           <Logo />
         </header>
-        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0">
           {children}
         </main>
       </div>

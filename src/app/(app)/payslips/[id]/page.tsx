@@ -5,6 +5,7 @@ import { requireEmployee } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { PayslipView } from "@/components/payslip-view";
+import { PrintButton } from "@/components/print-button";
 
 export default async function MyPayslipPage({
   params,
@@ -28,18 +29,25 @@ export default async function MyPayslipPage({
     <div>
       <Link
         href="/payslips"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 print:hidden"
       >
         <ArrowLeft className="h-4 w-4" /> Back to payslips
       </Link>
 
-      <PageHeader title="Payslip" description={slip.payrollRun.label} />
+      <div className="print:hidden">
+        <PageHeader
+          title="Payslip"
+          description={slip.payrollRun.label}
+          action={<PrintButton />}
+        />
+      </div>
 
       <PayslipView
         slip={slip}
         employee={slip.employee}
         run={slip.payrollRun}
         currency={me.organization.currency}
+        orgName={me.organization.name}
       />
     </div>
   );
