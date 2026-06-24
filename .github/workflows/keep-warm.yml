@@ -1,0 +1,27 @@
+name: Keep warm
+
+# Pings the health endpoint to stop the Neon free-tier database from
+# auto-suspending (it scales to zero after ~5 min idle, which causes a slow
+# cold start on the next visit). Free + unlimited on this public repo.
+on:
+  schedule:
+    - cron: "*/5 * * * *" # every 5 minutes (GitHub Actions minimum)
+  workflow_dispatch: {} # allow manual runs
+
+# Don't pile up overlapping runs.
+concurrency:
+  group: keep-warm
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/health a few times
+        run: |
+          URL="https://hris-mocha.vercel.app/api/health"
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$URL" || echo "000")
+            echo "ping $i -> HTTP $code"
+            if [ "$i" -lt 3 ]; then sleep 90; fi
+          done
