@@ -60,6 +60,16 @@ async function main() {
   ) => {
     const employeeNumber = number();
     const n = seq;
+    const t = jobTitle.toLowerCase();
+    const monthlySalary = t.includes("chief")
+      ? 250000
+      : t.includes("vp") || t.includes("head") || t.includes("director")
+        ? 120000
+        : t.includes("manager")
+          ? 80000
+          : t.includes("senior")
+            ? 60000
+            : 38000;
     return prisma.employee.create({
       data: {
         organizationId: org.id,
@@ -78,6 +88,8 @@ async function main() {
         philHealthNumber: `12-${String(100000000 + n).padStart(9, "0")}-${n % 10}`,
         tin: `${String(100 + n).padStart(3, "0")}-${String(200 + n).padStart(3, "0")}-${String(300 + n).padStart(3, "0")}-000`,
         pagIbigNumber: `1211-${String(1000 + n).padStart(4, "0")}-${String(2000 + n).padStart(4, "0")}`,
+        monthlySalary,
+        monthlyAllowance: 2000,
       },
     });
   };

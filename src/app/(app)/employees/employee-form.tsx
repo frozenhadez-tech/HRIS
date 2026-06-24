@@ -220,6 +220,40 @@ export function EmployeeForm({
         </CardBody>
       </Card>
 
+      <Card>
+        <CardHeader
+          title="Compensation"
+          description="Basis for payroll calculations."
+        />
+        <CardBody className="grid gap-4 sm:grid-cols-2">
+          <Field label="Monthly salary" htmlFor="monthlySalary" error={e.monthlySalary}>
+            <Input
+              id="monthlySalary"
+              name="monthlySalary"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={defaults?.monthlySalary ?? 0}
+            />
+          </Field>
+          <Field
+            label="Monthly allowance"
+            htmlFor="monthlyAllowance"
+            error={e.monthlyAllowance}
+            hint="Non-taxable de minimis allowance."
+          >
+            <Input
+              id="monthlyAllowance"
+              name="monthlyAllowance"
+              type="number"
+              min={0}
+              step="0.01"
+              defaultValue={defaults?.monthlyAllowance ?? 0}
+            />
+          </Field>
+        </CardBody>
+      </Card>
+
       <div className="flex items-center justify-end gap-3">
         <Link href={cancelHref}>
           <Button type="button" variant="secondary">

@@ -12,7 +12,7 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DeleteButton } from "@/components/delete-button";
 import { EmployeeStatusBadge } from "@/components/status-badges";
-import { fullName, formatDate } from "@/lib/utils";
+import { fullName, formatDate, formatCurrency } from "@/lib/utils";
 import { EMPLOYMENT_TYPE_LABELS } from "@/lib/constants";
 
 function Info({ label, children }: { label: string; children?: ReactNode }) {
@@ -170,6 +170,25 @@ export default async function EmployeeDetailPage({
             </dl>
           </CardBody>
         </Card>
+
+        {can.viewCompensation(user.role) && (
+          <Card>
+            <CardHeader title="Compensation" />
+            <CardBody>
+              <dl className="grid grid-cols-2 gap-4">
+                <Info label="Monthly salary">
+                  {formatCurrency(emp.monthlySalary, user.organization.currency)}
+                </Info>
+                <Info label="Monthly allowance">
+                  {formatCurrency(
+                    emp.monthlyAllowance,
+                    user.organization.currency,
+                  )}
+                </Info>
+              </dl>
+            </CardBody>
+          </Card>
+        )}
 
         <Card>
           <CardHeader title="Account access" />

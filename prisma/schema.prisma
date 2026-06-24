@@ -69,6 +69,8 @@ model Organization {
   timeEntries      TimeEntry[]
   shifts           Shift[]
   shiftAssignments ShiftAssignment[]
+  payrollRuns      PayrollRun[]
+  payslips         Payslip[]
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +97,7 @@ model User {
 
   auditLogs             AuditLog[]
   reviewedLeaveRequests LeaveRequest[] @relation("LeaveReviewer")
+  createdPayrollRuns    PayrollRun[]   @relation("PayrollCreator")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -189,6 +192,12 @@ model Employee {
   philHealthNumber String? // PhilHealth
   tin              String? // Tax Identification Number (BIR)
   pagIbigNumber    String? // Pag-IBIG / HDMF MID
+
+  // Compensation (basis for payroll)
+  monthlySalary    Float @default(0)
+  monthlyAllowance Float @default(0)
+
+  payslips Payslip[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -359,4 +368,90 @@ model ShiftAssignment {
 
   @@unique([employeeId, date])
   @@index([organizationId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Payroll (Milestone 3)
+// ---------------------------------------------------------------------------
+
+enum PayFrequency {
+  MONTHLY
+  SEMI_MONTHLY
+  DAILY
+}
+
+enum PayrollStatus {
+  DRAFT
+  FINALIZED
+  PAID
+}
+
+model PayrollRun {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  label       String
+  frequency   PayFrequency  @default(MONTHLY)
+  periodStart DateTime      @db.Date
+  periodEnd   DateTime      @db.Date
+  payDate     DateTime      @db.Date
+  status      PayrollStatus @default(DRAFT)
+
+  createdById String?
+  createdBy   User?   @relation("PayrollCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payslips Payslip[]
+
+  @@index([organizationId, periodStart])
+}
+
+model Payslip {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  payrollRunId String
+  payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
+  employeeId   String
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  // Earnings
+  basicPay      Float @default(0)
+  allowance     Float @default(0)
+  overtimeHours Float @default(0)
+  overtimePay   Float @default(0)
+  otherEarnings Float @default(0)
+  grossPay      Float @default(0)
+
+  // Attendance-derived
+  daysWorked      Float @default(0)
+  absentDays      Float @default(0)
+  unpaidLeaveDays Float @default(0)
+
+  // Deductions (employee share)
+  sss              Float @default(0)
+  philHealth       Float @default(0)
+  pagIbig          Float @default(0)
+  withholdingTax   Float @default(0)
+  absenceDeduction Float @default(0)
+  otherDeductions  Float @default(0)
+  totalDeductions  Float @default(0)
+
+  // Employer share (informational / reporting)
+  sssEr        Float @default(0)
+  philHealthEr Float @default(0)
+  pagIbigEr    Float @default(0)
+
+  netPay Float   @default(0)
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([payrollRunId, employeeId])
+  @@index([organizationId, employeeId])
 }

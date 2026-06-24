@@ -18,6 +18,8 @@ import {
   CheckSquare,
   Clock,
   CalendarRange,
+  Wallet,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
@@ -50,6 +52,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/approvals", label: "Approvals", icon: CheckSquare, min: "MANAGER" },
       { href: "/attendance", label: "Attendance", icon: Clock, min: "EMPLOYEE" },
       { href: "/scheduling", label: "Scheduling", icon: CalendarRange, min: "EMPLOYEE" },
+    ],
+  },
+  {
+    label: "Payroll",
+    items: [
+      { href: "/payroll", label: "Payroll", icon: Wallet, min: "HR_MANAGER" },
+      { href: "/payslips", label: "My payslips", icon: Receipt, min: "EMPLOYEE" },
     ],
   },
   {

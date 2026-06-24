@@ -108,6 +108,8 @@ export const employeeSchema = z.object({
   philHealthNumber: optionalText,
   tin: optionalText,
   pagIbigNumber: optionalText,
+  monthlySalary: z.coerce.number().min(0, "Must be 0 or more.").default(0),
+  monthlyAllowance: z.coerce.number().min(0, "Must be 0 or more.").default(0),
 });
 
 // ---------------------------------------------------------------------------
@@ -231,4 +233,31 @@ export const dayAttendanceSchema = z.object({
   date: requiredDate,
   clockIn: optionalTime,
   clockOut: optionalTime,
+});
+
+// ---------------------------------------------------------------------------
+// Payroll (Milestone 3)
+// ---------------------------------------------------------------------------
+
+export const payFrequencyEnum = z.enum(["MONTHLY", "SEMI_MONTHLY", "DAILY"]);
+
+export const payrollRunSchema = z
+  .object({
+    label: z.string().trim().min(2, "Label is required."),
+    frequency: payFrequencyEnum,
+    periodStart: requiredDate,
+    periodEnd: requiredDate,
+    payDate: requiredDate,
+  })
+  .refine((d) => d.periodEnd >= d.periodStart, {
+    message: "Period end can't be before the start.",
+    path: ["periodEnd"],
+  });
+
+export const payslipAdjustSchema = z.object({
+  allowance: z.coerce.number().min(0, "Must be 0 or more."),
+  overtimeHours: z.coerce.number().min(0, "Must be 0 or more."),
+  otherEarnings: z.coerce.number().min(0, "Must be 0 or more."),
+  otherDeductions: z.coerce.number().min(0, "Must be 0 or more."),
+  notes: optionalText,
 });

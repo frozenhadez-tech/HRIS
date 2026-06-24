@@ -3,6 +3,7 @@ import type {
   EmployeeStatus,
   UserStatus,
   LeaveRequestStatus,
+  PayrollStatus,
 } from "@prisma/client";
 
 export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
@@ -31,6 +32,12 @@ export const LEAVE_STATUS_LABELS: Record<LeaveRequestStatus, string> = {
   APPROVED: "Approved",
   REJECTED: "Rejected",
   CANCELLED: "Cancelled",
+};
+
+export const PAYROLL_STATUS_LABELS: Record<PayrollStatus, string> = {
+  DRAFT: "Draft",
+  FINALIZED: "Finalized",
+  PAID: "Paid",
 };
 
 export const EMPLOYMENT_TYPES = Object.keys(

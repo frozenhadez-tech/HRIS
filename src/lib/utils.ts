@@ -91,6 +91,20 @@ export function formatHours(hours: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/** Format a monetary amount in the given ISO currency (default PHP). */
+export function formatCurrency(amount: number, currency = "PHP"): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return amount.toFixed(2);
+  }
+}
+
 /** Format a time like "9:00 AM". */
 export function formatTime(value?: Date | string | null): string {
   if (!value) return "—";

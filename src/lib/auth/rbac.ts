@@ -46,4 +46,7 @@ export const can = {
   viewTeamAttendance: (r: UserRole) => roleAtLeast(r, "MANAGER"),
   editAttendance: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
   manageShifts: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
+  // Payroll
+  managePayroll: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
+  viewCompensation: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
 };

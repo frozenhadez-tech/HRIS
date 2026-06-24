@@ -2,12 +2,14 @@ import type {
   EmployeeStatus,
   UserStatus,
   LeaveRequestStatus,
+  PayrollStatus,
 } from "@prisma/client";
 import { Badge } from "./ui/badge";
 import {
   EMPLOYEE_STATUS_LABELS,
   USER_STATUS_LABELS,
   LEAVE_STATUS_LABELS,
+  PAYROLL_STATUS_LABELS,
 } from "@/lib/constants";
 
 const EMPLOYEE_TONE = {
@@ -43,5 +45,17 @@ const LEAVE_TONE = {
 export function LeaveStatusBadge({ status }: { status: LeaveRequestStatus }) {
   return (
     <Badge tone={LEAVE_TONE[status]}>{LEAVE_STATUS_LABELS[status]}</Badge>
+  );
+}
+
+const PAYROLL_TONE = {
+  DRAFT: "slate",
+  FINALIZED: "blue",
+  PAID: "green",
+} as const;
+
+export function PayrollStatusBadge({ status }: { status: PayrollStatus }) {
+  return (
+    <Badge tone={PAYROLL_TONE[status]}>{PAYROLL_STATUS_LABELS[status]}</Badge>
   );
 }
