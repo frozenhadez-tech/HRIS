@@ -160,6 +160,18 @@ export default async function EmployeeDetailPage({
         </Card>
 
         <Card>
+          <CardHeader title="Government IDs" />
+          <CardBody>
+            <dl className="grid grid-cols-2 gap-4">
+              <Info label="SSS">{emp.sssNumber}</Info>
+              <Info label="PhilHealth">{emp.philHealthNumber}</Info>
+              <Info label="TIN">{emp.tin}</Info>
+              <Info label="Pag-IBIG">{emp.pagIbigNumber}</Info>
+            </dl>
+          </CardBody>
+        </Card>
+
+        <Card>
           <CardHeader title="Account access" />
           <CardBody>
             {emp.user ? (

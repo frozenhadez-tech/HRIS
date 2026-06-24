@@ -53,3 +53,24 @@ export async function assertEmployeeInOrg(
   });
   if (!found) throw new Error("Selected employee is invalid.");
 }
+
+/** Fetch a leave type within the tenant (throws if missing). */
+export async function getLeaveTypeInOrg(organizationId: string, id: string) {
+  const leaveType = await prisma.leaveType.findFirst({
+    where: { id, organizationId },
+  });
+  if (!leaveType) throw new Error("Selected leave type is invalid.");
+  return leaveType;
+}
+
+/** Ensure a shift belongs to the tenant. */
+export async function assertShiftInOrg(
+  organizationId: string,
+  id: string,
+): Promise<void> {
+  const found = await prisma.shift.findFirst({
+    where: { id, organizationId },
+    select: { id: true },
+  });
+  if (!found) throw new Error("Selected shift is invalid.");
+}

@@ -57,3 +57,44 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
 }
+
+// --- Time & attendance helpers ---
+
+/** Count working days (Mon–Fri) inclusive between two dates. */
+export function countWeekdays(start: Date, end: Date): number {
+  const s = new Date(start);
+  s.setHours(0, 0, 0, 0);
+  const e = new Date(end);
+  e.setHours(0, 0, 0, 0);
+  if (e < s) return 0;
+  let count = 0;
+  const cursor = new Date(s);
+  while (cursor <= e) {
+    const day = cursor.getDay();
+    if (day !== 0 && day !== 6) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+/** Decimal hours between two instants (never negative). */
+export function hoursBetween(a: Date, b: Date): number {
+  return Math.max(0, (b.getTime() - a.getTime()) / 3_600_000);
+}
+
+/** Format decimal hours as "7h 30m". */
+export function formatHours(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
+/** Format a time like "9:00 AM". */
+export function formatTime(value?: Date | string | null): string {
+  if (!value) return "—";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}

@@ -39,4 +39,11 @@ export const can = {
   manageOrgSettings: (r: UserRole) => roleAtLeast(r, "ORG_ADMIN"),
   viewAuditLog: (r: UserRole) => roleAtLeast(r, "ORG_ADMIN"),
   viewReports: (r: UserRole) => roleAtLeast(r, "MANAGER"),
+  // Time & attendance
+  approveLeave: (r: UserRole) => roleAtLeast(r, "MANAGER"),
+  manageLeaveTypes: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
+  manageBalances: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
+  viewTeamAttendance: (r: UserRole) => roleAtLeast(r, "MANAGER"),
+  editAttendance: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
+  manageShifts: (r: UserRole) => roleAtLeast(r, "HR_MANAGER"),
 };

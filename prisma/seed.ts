@@ -57,11 +57,13 @@ async function main() {
     departmentId: string,
     managerId: string | null,
     hireDate: string,
-  ) =>
-    prisma.employee.create({
+  ) => {
+    const employeeNumber = number();
+    const n = seq;
+    return prisma.employee.create({
       data: {
         organizationId: org.id,
-        employeeNumber: number(),
+        employeeNumber,
         firstName: first,
         lastName: last,
         email: `${first.toLowerCase()}.${last.toLowerCase()}@demo.test`,
@@ -71,8 +73,14 @@ async function main() {
         employmentType: "FULL_TIME",
         status: "ACTIVE",
         hireDate: new Date(hireDate),
+        // Sample PH statutory numbers (demo only).
+        sssNumber: `34-${String(1000000 + n).padStart(7, "0")}-${n % 10}`,
+        philHealthNumber: `12-${String(100000000 + n).padStart(9, "0")}-${n % 10}`,
+        tin: `${String(100 + n).padStart(3, "0")}-${String(200 + n).padStart(3, "0")}-${String(300 + n).padStart(3, "0")}-000`,
+        pagIbigNumber: `1211-${String(1000 + n).padStart(4, "0")}-${String(2000 + n).padStart(4, "0")}`,
       },
     });
+  };
 
   // Leadership
   const ceo = await make("Alex", "Morgan", "Chief Executive Officer", exec.id, null, "2019-01-15");
@@ -131,7 +139,152 @@ async function main() {
     ],
   });
 
+  // --- Time & Attendance demo data ---
+  const allEmployees = await prisma.employee.findMany({
+    where: { organizationId: org.id },
+  });
+  const byName = (first: string) =>
+    allEmployees.find((e) => e.firstName === first)!;
+  const year = new Date().getFullYear();
+
+  const vacation = await prisma.leaveType.create({
+    data: {
+      organizationId: org.id,
+      name: "Vacation",
+      description: "Paid annual leave.",
+      defaultAllocationDays: 20,
+      paid: true,
+      colorHex: "#22c55e",
+    },
+  });
+  const sick = await prisma.leaveType.create({
+    data: {
+      organizationId: org.id,
+      name: "Sick Leave",
+      defaultAllocationDays: 10,
+      paid: true,
+      colorHex: "#f59e0b",
+    },
+  });
+  await prisma.leaveType.create({
+    data: {
+      organizationId: org.id,
+      name: "Unpaid Leave",
+      defaultAllocationDays: 0,
+      paid: false,
+      colorHex: "#64748b",
+    },
+  });
+
+  // Allocate paid-leave balances to everyone for the current year.
+  for (const emp of allEmployees) {
+    await prisma.leaveBalance.createMany({
+      data: [
+        { organizationId: org.id, employeeId: emp.id, leaveTypeId: vacation.id, year, allocatedDays: 20 },
+        { organizationId: org.id, employeeId: emp.id, leaveTypeId: sick.id, year, allocatedDays: 10 },
+      ],
+    });
+  }
+
+  const noah = byName("Noah"); // employee@ login
+  const emma = byName("Emma");
+  const lucas = byName("Lucas");
+  const sofia = byName("Sofia");
+
+  // Approved vacation for Noah (deducts balance).
+  await prisma.leaveRequest.create({
+    data: {
+      organizationId: org.id,
+      employeeId: noah.id,
+      leaveTypeId: vacation.id,
+      startDate: new Date(year, 6, 6),
+      endDate: new Date(year, 6, 10),
+      days: 5,
+      reason: "Family trip",
+      status: "APPROVED",
+      reviewedById: userIds["manager@demo.test"],
+      reviewedAt: new Date(),
+    },
+  });
+  await prisma.leaveBalance.update({
+    where: {
+      employeeId_leaveTypeId_year: {
+        employeeId: noah.id,
+        leaveTypeId: vacation.id,
+        year,
+      },
+    },
+    data: { usedDays: 5 },
+  });
+
+  // Pending requests (show up under Approvals).
+  await prisma.leaveRequest.create({
+    data: {
+      organizationId: org.id,
+      employeeId: emma.id,
+      leaveTypeId: vacation.id,
+      startDate: new Date(year, 7, 17),
+      endDate: new Date(year, 7, 21),
+      days: 5,
+      reason: "Wedding",
+      status: "PENDING",
+    },
+  });
+  await prisma.leaveRequest.create({
+    data: {
+      organizationId: org.id,
+      employeeId: sofia.id,
+      leaveTypeId: sick.id,
+      startDate: new Date(year, 6, 1),
+      endDate: new Date(year, 6, 1),
+      days: 1,
+      reason: "Medical appointment",
+      status: "PENDING",
+    },
+  });
+
+  // Time entries. `at(daysAgo, h, m)` builds a timestamp.
+  const at = (daysAgo: number, h: number, m: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - daysAgo);
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+  await prisma.timeEntry.create({
+    data: { organizationId: org.id, employeeId: noah.id, clockIn: at(0, 9, 2) }, // still clocked in
+  });
+  await prisma.timeEntry.createMany({
+    data: [
+      { organizationId: org.id, employeeId: emma.id, clockIn: at(0, 8, 55), clockOut: at(0, 17, 30) },
+      { organizationId: org.id, employeeId: byName("Priya").id, clockIn: at(0, 9, 10), clockOut: at(0, 18, 0) },
+      { organizationId: org.id, employeeId: sofia.id, clockIn: at(0, 9, 30), clockOut: at(0, 16, 45) },
+      { organizationId: org.id, employeeId: noah.id, clockIn: at(1, 9, 0), clockOut: at(1, 17, 15) },
+    ],
+  });
+
+  // Shifts + upcoming assignments.
+  const morning = await prisma.shift.create({
+    data: { organizationId: org.id, name: "Morning", startTime: "09:00", endTime: "17:00", colorHex: "#6366f1" },
+  });
+  const evening = await prisma.shift.create({
+    data: { organizationId: org.id, name: "Evening", startTime: "13:00", endTime: "21:00", colorHex: "#a855f7" },
+  });
+  const dayUTC = (daysAhead: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() + daysAhead);
+    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  };
+  await prisma.shiftAssignment.createMany({
+    data: [
+      { organizationId: org.id, employeeId: noah.id, shiftId: morning.id, date: dayUTC(1) },
+      { organizationId: org.id, employeeId: emma.id, shiftId: morning.id, date: dayUTC(1) },
+      { organizationId: org.id, employeeId: lucas.id, shiftId: evening.id, date: dayUTC(1) },
+      { organizationId: org.id, employeeId: noah.id, shiftId: evening.id, date: dayUTC(2) },
+    ],
+  });
+
   console.log(`\nSeeded "${org.name}" with ${seq} employees and ${accounts.length} login accounts.`);
+  console.log("Time & attendance: 3 leave types, balances, leave requests, time entries, 2 shifts.");
   console.log("Login at /login with any of these (password: Password123!):");
   for (const [email, role] of accounts) console.log(`  ${role.padEnd(11)} ${email}`);
 }

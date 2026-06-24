@@ -42,3 +42,31 @@ export async function authorize(min: UserRole): Promise<CurrentUser> {
 export function tenantScope(organizationId: string) {
   return { organizationId };
 }
+
+/**
+ * Require an authenticated user whose account is linked to an employee profile
+ * (needed for self-service: leave, attendance, schedule). Redirects otherwise.
+ */
+export async function requireEmployee(): Promise<
+  CurrentUser & { employeeId: string }
+> {
+  const user = await requireUser();
+  if (!user.employeeId || !user.employee) {
+    redirect("/dashboard?error=no-employee");
+  }
+  return user as CurrentUser & { employeeId: string };
+}
+
+/** Server-action variant of requireEmployee — throws instead of redirecting. */
+export async function authorizeEmployee(): Promise<
+  CurrentUser & { employeeId: string }
+> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Not authenticated.");
+  if (!user.employeeId || !user.employee) {
+    throw new Error(
+      "Your account isn't linked to an employee profile, so you can't use self-service features.",
+    );
+  }
+  return user as CurrentUser & { employeeId: string };
+}

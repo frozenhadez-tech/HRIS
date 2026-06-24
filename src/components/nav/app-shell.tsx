@@ -14,6 +14,10 @@ import {
   LogOut,
   Menu,
   X,
+  CalendarDays,
+  CheckSquare,
+  Clock,
+  CalendarRange,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
@@ -23,15 +27,39 @@ import { Logo } from "@/components/logo";
 import { cn, initials } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; min: UserRole };
+type NavGroup = { label?: string; items: NavItem[] };
 
-const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, min: "EMPLOYEE" },
-  { href: "/employees", label: "Employees", icon: Users, min: "MANAGER" },
-  { href: "/departments", label: "Departments", icon: Building2, min: "MANAGER" },
-  { href: "/org-chart", label: "Org chart", icon: Network, min: "MANAGER" },
-  { href: "/users", label: "Users & roles", icon: ShieldCheck, min: "ORG_ADMIN" },
-  { href: "/audit", label: "Audit log", icon: ScrollText, min: "ORG_ADMIN" },
-  { href: "/settings", label: "Settings", icon: Settings, min: "ORG_ADMIN" },
+const NAV_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, min: "EMPLOYEE" },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { href: "/employees", label: "Employees", icon: Users, min: "MANAGER" },
+      { href: "/departments", label: "Departments", icon: Building2, min: "MANAGER" },
+      { href: "/org-chart", label: "Org chart", icon: Network, min: "MANAGER" },
+    ],
+  },
+  {
+    label: "Time & Attendance",
+    items: [
+      { href: "/leave", label: "Leave", icon: CalendarDays, min: "EMPLOYEE" },
+      { href: "/approvals", label: "Approvals", icon: CheckSquare, min: "MANAGER" },
+      { href: "/attendance", label: "Attendance", icon: Clock, min: "EMPLOYEE" },
+      { href: "/scheduling", label: "Scheduling", icon: CalendarRange, min: "EMPLOYEE" },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { href: "/users", label: "Users & roles", icon: ShieldCheck, min: "ORG_ADMIN" },
+      { href: "/audit", label: "Audit log", icon: ScrollText, min: "ORG_ADMIN" },
+      { href: "/settings", label: "Settings", icon: Settings, min: "ORG_ADMIN" },
+    ],
+  },
 ];
 
 type ShellUser = { name: string; email: string; role: UserRole };
@@ -46,26 +74,39 @@ function NavLinks({
   onNavigate?: () => void;
 }) {
   return (
-    <nav className="flex-1 space-y-1 px-3 py-4">
-      {NAV.filter((item) => roleAtLeast(role, item.min)).map((item) => {
-        const active =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const Icon = item.icon;
+    <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+      {NAV_GROUPS.map((group, gi) => {
+        const items = group.items.filter((item) => roleAtLeast(role, item.min));
+        if (items.length === 0) return null;
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              active
-                ? "bg-indigo-50 text-indigo-700"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          <div key={group.label ?? gi} className="space-y-1">
+            {group.label && (
+              <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                {group.label}
+              </p>
             )}
-          >
-            <Icon className="h-4.5 w-4.5 shrink-0" strokeWidth={2} />
-            {item.label}
-          </Link>
+            {items.map((item) => {
+              const active =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    active
+                      ? "bg-indigo-50 text-indigo-700"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+                  )}
+                >
+                  <Icon className="h-4.5 w-4.5 shrink-0" strokeWidth={2} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         );
       })}
     </nav>

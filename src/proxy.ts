@@ -10,12 +10,12 @@ export async function proxy(req: NextRequest) {
 
   const isAuthPage = AUTH_PATHS.includes(pathname);
 
-  // Signed-in users have no business on the login / signup pages.
-  if (session && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  // Everything that isn't an auth page requires a session.
+  // Everything that isn't an auth page requires a (cryptographically) valid
+  // session token. We do NOT bounce signed-in users away from /login here: the
+  // token can be valid yet reference a user that no longer exists (e.g. after a
+  // db re-seed). The login/signup pages do a DB-backed check and redirect real
+  // users to the dashboard — keeping that decision out of the edge proxy avoids
+  // a redirect loop between the proxy and the page guards.
   if (!session && !isAuthPage) {
     const url = new URL("/login", req.url);
     if (pathname !== "/") url.searchParams.set("next", pathname);

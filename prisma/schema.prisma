@@ -62,6 +62,13 @@ model Organization {
   employees   Employee[]
   departments Department[]
   auditLogs   AuditLog[]
+
+  leaveTypes       LeaveType[]
+  leaveBalances    LeaveBalance[]
+  leaveRequests    LeaveRequest[]
+  timeEntries      TimeEntry[]
+  shifts           Shift[]
+  shiftAssignments ShiftAssignment[]
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +93,8 @@ model User {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  auditLogs AuditLog[]
+  auditLogs             AuditLog[]
+  reviewedLeaveRequests LeaveRequest[] @relation("LeaveReviewer")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -166,9 +174,21 @@ model Employee {
   headedDepartments Department[] @relation("DeptHead")
   user              User?        @relation("EmployeeUser")
 
+  // Time & attendance
+  leaveBalances    LeaveBalance[]
+  leaveRequests    LeaveRequest[]
+  timeEntries      TimeEntry[]
+  shiftAssignments ShiftAssignment[]
+
   // Emergency contact
   emergencyContactName  String?
   emergencyContactPhone String?
+
+  // Government / statutory IDs (Philippines)
+  sssNumber        String? // Social Security System
+  philHealthNumber String? // PhilHealth
+  tin              String? // Tax Identification Number (BIR)
+  pagIbigNumber    String? // Pag-IBIG / HDMF MID
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -199,4 +219,144 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([organizationId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Time & Attendance (Milestone 2)
+// ---------------------------------------------------------------------------
+
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveType {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name                  String
+  description           String?
+  defaultAllocationDays Int     @default(0)
+  paid                  Boolean @default(true)
+  colorHex              String? // e.g. "#6366f1" for UI accents
+  isActive              Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  balances LeaveBalance[]
+  requests LeaveRequest[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model LeaveBalance {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveTypeId String
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+
+  year          Int
+  allocatedDays Float @default(0)
+  usedDays      Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@index([organizationId])
+}
+
+model LeaveRequest {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveTypeId String
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  startDate DateTime
+  endDate   DateTime
+  days      Float // working days requested
+  reason    String?
+
+  status       LeaveRequestStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?              @relation("LeaveReviewer", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?
+  reviewNote   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([employeeId])
+}
+
+model TimeEntry {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  clockIn  DateTime
+  clockOut DateTime? // null while the entry is open
+  note     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, employeeId])
+  @@index([organizationId, clockIn])
+}
+
+model Shift {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name      String
+  startTime String // "09:00"
+  endTime   String // "17:00"
+  colorHex  String?
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments ShiftAssignment[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model ShiftAssignment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shiftId    String
+  shift      Shift    @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  date DateTime @db.Date
+  note String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([employeeId, date])
+  @@index([organizationId, date])
 }

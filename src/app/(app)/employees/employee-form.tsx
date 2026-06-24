@@ -179,6 +179,47 @@ export function EmployeeForm({
         </CardBody>
       </Card>
 
+      <Card>
+        <CardHeader
+          title="Government IDs"
+          description="Statutory contribution numbers (Philippines)."
+        />
+        <CardBody className="grid gap-4 sm:grid-cols-2">
+          <Field label="SSS number" htmlFor="sssNumber" error={e.sssNumber}>
+            <Input
+              id="sssNumber"
+              name="sssNumber"
+              placeholder="34-1234567-8"
+              defaultValue={defaults?.sssNumber ?? ""}
+            />
+          </Field>
+          <Field label="PhilHealth number" htmlFor="philHealthNumber" error={e.philHealthNumber}>
+            <Input
+              id="philHealthNumber"
+              name="philHealthNumber"
+              placeholder="12-345678901-2"
+              defaultValue={defaults?.philHealthNumber ?? ""}
+            />
+          </Field>
+          <Field label="TIN" htmlFor="tin" error={e.tin}>
+            <Input
+              id="tin"
+              name="tin"
+              placeholder="123-456-789-000"
+              defaultValue={defaults?.tin ?? ""}
+            />
+          </Field>
+          <Field label="Pag-IBIG number" htmlFor="pagIbigNumber" error={e.pagIbigNumber}>
+            <Input
+              id="pagIbigNumber"
+              name="pagIbigNumber"
+              placeholder="1234-5678-9012"
+              defaultValue={defaults?.pagIbigNumber ?? ""}
+            />
+          </Field>
+        </CardBody>
+      </Card>
+
       <div className="flex items-center justify-end gap-3">
         <Link href={cancelHref}>
           <Button type="button" variant="secondary">

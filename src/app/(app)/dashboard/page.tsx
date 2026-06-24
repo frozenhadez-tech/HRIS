@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { requireUser } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
-import { can } from "@/lib/auth/rbac";
+import { can, roleAtLeast } from "@/lib/auth/rbac";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Alert } from "@/components/ui/alert";
@@ -40,6 +40,19 @@ export default async function DashboardPage({
         include: { department: true },
       }),
     ]);
+
+  const canApprove = roleAtLeast(user.role, "MANAGER");
+  const pendingApprovals = canApprove
+    ? await prisma.leaveRequest.count({
+        where: {
+          organizationId: orgId,
+          status: "PENDING",
+          ...(roleAtLeast(user.role, "HR_MANAGER")
+            ? {}
+            : { employee: { managerId: user.employeeId ?? "__none__" } }),
+        },
+      })
+    : 0;
 
   const stats = [
     {
@@ -78,6 +91,24 @@ export default async function DashboardPage({
       {error === "forbidden" && (
         <Alert tone="warning" className="mb-6">
           You don&apos;t have permission to view that page.
+        </Alert>
+      )}
+
+      {error === "no-employee" && (
+        <Alert tone="info" className="mb-6">
+          Your account isn&apos;t linked to an employee profile, so self-service
+          (leave, attendance, schedule) isn&apos;t available. Ask an admin to link
+          your account.
+        </Alert>
+      )}
+
+      {pendingApprovals > 0 && (
+        <Alert tone="warning" className="mb-6">
+          You have {pendingApprovals} leave request
+          {pendingApprovals === 1 ? "" : "s"} awaiting your review.{" "}
+          <Link href="/approvals" className="font-medium underline">
+            Review now
+          </Link>
         </Alert>
       )}
 

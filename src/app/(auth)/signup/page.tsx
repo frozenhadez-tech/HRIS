@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { Card } from "@/components/ui/card";
 import { SignupForm } from "./signup-form";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  // Already signed in with a real account? Skip the form.
+  if (await getCurrentUser()) redirect("/dashboard");
+
   return (
     <Card className="p-6">
       <div className="mb-6">
