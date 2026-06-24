@@ -74,3 +74,39 @@ export async function assertShiftInOrg(
   });
   if (!found) throw new Error("Selected shift is invalid.");
 }
+
+/**
+ * Create missing yearly leave balances for the given employees from each
+ * active PAID leave type's default allocation. Idempotent — `skipDuplicates`
+ * leaves any existing balance (and its used days / custom allocation)
+ * untouched. Unpaid types are skipped (they carry no limit). Returns the
+ * number of balance rows created.
+ */
+export async function grantLeaveBalances(
+  organizationId: string,
+  employeeIds: string[],
+  year: number,
+): Promise<number> {
+  if (employeeIds.length === 0) return 0;
+  const paidTypes = await prisma.leaveType.findMany({
+    where: { organizationId, isActive: true, paid: true },
+    select: { id: true, defaultAllocationDays: true },
+  });
+  if (paidTypes.length === 0) return 0;
+
+  const data = employeeIds.flatMap((employeeId) =>
+    paidTypes.map((t) => ({
+      organizationId,
+      employeeId,
+      leaveTypeId: t.id,
+      year,
+      allocatedDays: t.defaultAllocationDays,
+      usedDays: 0,
+    })),
+  );
+  const res = await prisma.leaveBalance.createMany({
+    data,
+    skipDuplicates: true,
+  });
+  return res.count;
+}

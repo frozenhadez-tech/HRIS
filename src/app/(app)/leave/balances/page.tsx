@@ -6,6 +6,8 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { fullName } from "@/lib/utils";
+import { grantAnnualCredits } from "@/lib/actions/leave";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { BalanceForm } from "./balance-form";
 
 export default async function BalancesPage() {
@@ -42,7 +44,25 @@ export default async function BalancesPage() {
       />
 
       <Card className="mb-6">
-        <CardHeader title="Set an allocation" />
+        <CardHeader
+          title="Grant annual credits"
+          description={`Create ${year} balances for every employee from each paid leave type's default allocation. Existing balances are left untouched, so this is safe to re-run.`}
+        />
+        <CardBody>
+          <form action={grantAnnualCredits}>
+            <input type="hidden" name="year" defaultValue={year} />
+            <SubmitButton pendingText="Granting…">
+              Grant {year} credits to all employees
+            </SubmitButton>
+          </form>
+        </CardBody>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader
+          title="Set an allocation"
+          description="Override a single employee's balance for one leave type."
+        />
         <CardBody>
           <BalanceForm
             employees={employees}

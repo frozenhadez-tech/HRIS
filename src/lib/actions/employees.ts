@@ -14,6 +14,7 @@ import {
   messageFor,
   assertDepartmentInOrg,
   assertEmployeeInOrg,
+  grantLeaveBalances,
 } from "./_server";
 
 /** Default a probationary hire's probation end to hire date + 6 months. */
@@ -53,6 +54,9 @@ export async function createEmployee(
     const created = await prisma.employee.create({
       data: { organizationId: user.organizationId, ...withProbationEnd(data) },
     });
+    // Seed this year's paid-leave balances from the type defaults so the new
+    // hire starts with visible credits (idempotent / non-destructive).
+    await grantLeaveBalances(user.organizationId, [created.id], new Date().getFullYear());
     await writeAudit({
       organizationId: user.organizationId,
       userId: user.id,

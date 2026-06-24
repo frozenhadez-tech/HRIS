@@ -19,6 +19,7 @@ import {
   messageFor,
   assertEmployeeInOrg,
   getLeaveTypeInOrg,
+  grantLeaveBalances,
 } from "./_server";
 
 /** Holiday date keys for an org (excluded from leave day counts). */
@@ -436,6 +437,39 @@ export async function updateLeaveType(
   }
   revalidatePath("/leave/types");
   redirect("/leave/types");
+}
+
+/**
+ * Bulk-grant a year's paid-leave balances to every (non-terminated) employee
+ * from each paid leave type's default allocation. Idempotent — existing
+ * balances are left untouched, so it's safe to re-run.
+ */
+export async function grantAnnualCredits(formData: FormData): Promise<void> {
+  const user = await authorize("HR_MANAGER");
+  const yearRaw = Number(formData.get("year"));
+  const year =
+    Number.isInteger(yearRaw) && yearRaw >= 2000 && yearRaw <= 2100
+      ? yearRaw
+      : new Date().getFullYear();
+
+  const employees = await prisma.employee.findMany({
+    where: { organizationId: user.organizationId, status: { not: "TERMINATED" } },
+    select: { id: true },
+  });
+  const created = await grantLeaveBalances(
+    user.organizationId,
+    employees.map((e) => e.id),
+    year,
+  );
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "leave.balance.grant",
+    entityType: "LeaveBalance",
+    metadata: { year, employees: employees.length, created },
+  });
+  revalidatePath("/leave/balances");
+  redirect("/leave/balances");
 }
 
 export async function setLeaveBalance(
