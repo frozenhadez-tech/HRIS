@@ -22,13 +22,32 @@ body {
   outline-offset: 2px;
 }
 
-/* Print: white page, keep background colors (net-pay highlight, badges). */
+/* Print: show only the payslip — hide the app chrome and reset the layout.
+   Uses explicit selectors with !important so it beats Tailwind's responsive
+   utilities (e.g. lg:block on the sidebar) during print. */
 @media print {
   body {
-    background-color: #ffffff;
+    background-color: #ffffff !important;
   }
+  .app-sidebar,
+  .app-topbar,
+  .print-hidden {
+    display: none !important;
+  }
+  .app-content {
+    padding-left: 0 !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  /* Keep background colors (net-pay highlight, badges). */
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+  @page {
+    margin: 1.4cm;
   }
 }

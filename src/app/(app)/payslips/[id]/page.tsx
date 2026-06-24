@@ -29,12 +29,12 @@ export default async function MyPayslipPage({
     <div>
       <Link
         href="/payslips"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 print:hidden"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 print-hidden"
       >
         <ArrowLeft className="h-4 w-4" /> Back to payslips
       </Link>
 
-      <div className="print:hidden">
+      <div className="print-hidden">
         <PageHeader
           title="Payslip"
           description={slip.payrollRun.label}

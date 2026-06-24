@@ -31,12 +31,12 @@ export default async function PayslipPage({
     <div>
       <Link
         href={`/payroll/${id}`}
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 print:hidden"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 print-hidden"
       >
         <ArrowLeft className="h-4 w-4" /> Back to run
       </Link>
 
-      <div className="print:hidden">
+      <div className="print-hidden">
         <PageHeader
           title="Payslip"
           description={slip.payrollRun.label}
@@ -53,7 +53,7 @@ export default async function PayslipPage({
       />
 
       {slip.payrollRun.status === "DRAFT" && (
-        <Card className="mt-6 print:hidden">
+        <Card className="mt-6 print-hidden">
           <CardHeader
             title="Adjustments"
             description="Edit allowance, overtime, and other items — totals recompute on save."
