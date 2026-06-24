@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { Plus, CalendarDays, SlidersHorizontal, Wallet } from "lucide-react";
+import {
+  Plus,
+  CalendarDays,
+  SlidersHorizontal,
+  Wallet,
+  CalendarRange,
+  CalendarOff,
+  BarChart3,
+  Pencil,
+} from "lucide-react";
 import { requireEmployee } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/auth/rbac";
@@ -51,20 +60,23 @@ export default async function LeavePage() {
         title="Leave"
         description={`Your balances and requests for ${year}.`}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/leave/calendar" className={buttonVariants("secondary")}>
+              <CalendarRange className="h-4 w-4" /> Calendar
+            </Link>
             {isHR && (
               <>
-                <Link
-                  href="/leave/types"
-                  className={buttonVariants("secondary")}
-                >
+                <Link href="/leave/types" className={buttonVariants("secondary")}>
                   <SlidersHorizontal className="h-4 w-4" /> Types
                 </Link>
-                <Link
-                  href="/leave/balances"
-                  className={buttonVariants("secondary")}
-                >
+                <Link href="/leave/balances" className={buttonVariants("secondary")}>
                   <Wallet className="h-4 w-4" /> Balances
+                </Link>
+                <Link href="/leave/holidays" className={buttonVariants("secondary")}>
+                  <CalendarOff className="h-4 w-4" /> Holidays
+                </Link>
+                <Link href="/leave/reports" className={buttonVariants("secondary")}>
+                  <BarChart3 className="h-4 w-4" /> Reports
                 </Link>
               </>
             )}
@@ -165,15 +177,23 @@ export default async function LeavePage() {
                       <LeaveStatusBadge status={r.status} />
                     </TD>
                     <TD>
-                      <div className="flex justify-end">
+                      <div className="flex items-center justify-end gap-2">
                         {r.status === "PENDING" && (
-                          <DeleteButton
-                            action={cancelLeaveRequest.bind(null, r.id)}
-                            size="sm"
-                            confirmMessage="Cancel this leave request?"
-                          >
-                            Cancel
-                          </DeleteButton>
+                          <>
+                            <Link
+                              href={`/leave/${r.id}/edit`}
+                              className={buttonVariants("secondary", "sm")}
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </Link>
+                            <DeleteButton
+                              action={cancelLeaveRequest.bind(null, r.id)}
+                              size="sm"
+                              confirmMessage="Cancel this leave request?"
+                            >
+                              Cancel
+                            </DeleteButton>
+                          </>
                         )}
                       </div>
                     </TD>

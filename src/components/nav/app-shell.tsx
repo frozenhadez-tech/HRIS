@@ -22,6 +22,7 @@ import {
   Receipt,
   HeartPulse,
   ClipboardList,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@prisma/client";
@@ -37,6 +38,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, min: "EMPLOYEE" },
+      { href: "/notifications", label: "Notifications", icon: Bell, min: "EMPLOYEE" },
     ],
   },
   {
@@ -86,10 +88,12 @@ function NavLinks({
   role,
   pathname,
   onNavigate,
+  notificationCount,
 }: {
   role: UserRole;
   pathname: string;
   onNavigate?: () => void;
+  notificationCount: number;
 }) {
   return (
     <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
@@ -107,6 +111,8 @@ function NavLinks({
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
               const Icon = item.icon;
+              const showBadge =
+                item.href === "/notifications" && notificationCount > 0;
               return (
                 <Link
                   key={item.href}
@@ -120,7 +126,12 @@ function NavLinks({
                   )}
                 >
                   <Icon className="h-4.5 w-4.5 shrink-0" strokeWidth={2} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {showBadge && (
+                    <span className="grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+                      {notificationCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -136,11 +147,13 @@ function SidebarBody({
   orgName,
   pathname,
   onNavigate,
+  notificationCount,
 }: {
   user: ShellUser;
   orgName: string;
   pathname: string;
   onNavigate?: () => void;
+  notificationCount: number;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -151,7 +164,12 @@ function SidebarBody({
         <p className="truncate text-sm font-medium text-slate-900">{orgName}</p>
         <p className="text-xs text-slate-400">Organization</p>
       </div>
-      <NavLinks role={user.role} pathname={pathname} onNavigate={onNavigate} />
+      <NavLinks
+        role={user.role}
+        pathname={pathname}
+        onNavigate={onNavigate}
+        notificationCount={notificationCount}
+      />
       <div className="border-t border-slate-200 p-3">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600">
@@ -183,10 +201,12 @@ function SidebarBody({
 export function AppShell({
   user,
   orgName,
+  notificationCount,
   children,
 }: {
   user: ShellUser;
   orgName: string;
+  notificationCount: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -196,7 +216,12 @@ export function AppShell({
     <div className="min-h-screen">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">
-        <SidebarBody user={user} orgName={orgName} pathname={pathname} />
+        <SidebarBody
+          user={user}
+          orgName={orgName}
+          pathname={pathname}
+          notificationCount={notificationCount}
+        />
       </aside>
 
       {/* Mobile drawer */}
@@ -213,6 +238,7 @@ export function AppShell({
               orgName={orgName}
               pathname={pathname}
               onNavigate={() => setMobileOpen(false)}
+              notificationCount={notificationCount}
             />
           </div>
         </div>

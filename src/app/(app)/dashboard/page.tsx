@@ -5,10 +5,12 @@ import {
   Building2,
   ShieldCheck,
   ArrowRight,
+  Bell,
 } from "lucide-react";
 import { requireUser } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { can, roleAtLeast } from "@/lib/auth/rbac";
+import { getLeaveReminders } from "@/lib/notifications";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Alert } from "@/components/ui/alert";
@@ -53,6 +55,8 @@ export default async function DashboardPage({
         },
       })
     : 0;
+
+  const reminders = await getLeaveReminders();
 
   const stats = [
     {
@@ -110,6 +114,34 @@ export default async function DashboardPage({
             Review now
           </Link>
         </Alert>
+      )}
+
+      {reminders.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader
+            title="Reminders"
+            action={
+              <Link
+                href="/notifications"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                View all
+              </Link>
+            }
+          />
+          <CardBody className="p-0">
+            <ul className="divide-y divide-slate-100">
+              {reminders.slice(0, 4).map((r) => (
+                <li key={r.id} className="flex items-start gap-3 px-5 py-3">
+                  <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-600">
+                    <Bell className="h-3.5 w-3.5" />
+                  </span>
+                  <p className="text-sm text-slate-700">{r.message}</p>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
       )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

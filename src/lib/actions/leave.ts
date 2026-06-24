@@ -10,8 +10,9 @@ import {
   leaveRequestSchema,
   leaveTypeSchema,
   leaveBalanceSchema,
+  holidaySchema,
 } from "@/lib/validations";
-import { countWeekdays } from "@/lib/utils";
+import { countLeaveDays, leaveDateKey } from "@/lib/leave";
 import type { ActionState } from "./state";
 import {
   zodToState,
@@ -19,6 +20,15 @@ import {
   assertEmployeeInOrg,
   getLeaveTypeInOrg,
 } from "./_server";
+
+/** Holiday date keys for an org (excluded from leave day counts). */
+async function holidayKeys(organizationId: string): Promise<Set<string>> {
+  const holidays = await prisma.holiday.findMany({
+    where: { organizationId },
+    select: { date: true },
+  });
+  return new Set(holidays.map((h) => leaveDateKey(h.date)));
+}
 
 // ---------------------------------------------------------------------------
 // Employee self-service
@@ -30,16 +40,19 @@ export async function createLeaveRequest(
 ): Promise<ActionState> {
   const parsed = leaveRequestSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return zodToState(parsed.error);
-  const { leaveTypeId, startDate, endDate, reason } = parsed.data;
+  const { leaveTypeId, startDate, endDate, halfDay, reason } = parsed.data;
 
   try {
     const me = await authorizeEmployee();
     const leaveType = await getLeaveTypeInOrg(me.organizationId, leaveTypeId);
     if (!leaveType.isActive) return { error: "That leave type is not active." };
 
-    const days = countWeekdays(startDate, endDate);
+    const keys = await holidayKeys(me.organizationId);
+    const days = countLeaveDays(startDate, endDate, keys, halfDay);
     if (days <= 0) {
-      return { error: "The selected range contains no working days." };
+      return {
+        error: "The selected range has no working days (weekend/holiday only).",
+      };
     }
 
     // Enforce balance only for paid leave types.
@@ -87,6 +100,7 @@ export async function createLeaveRequest(
         startDate,
         endDate,
         days,
+        halfDay,
         reason,
         status: "PENDING",
       },
@@ -130,6 +144,134 @@ export async function cancelLeaveRequest(id: string): Promise<void> {
   }
   revalidatePath("/leave");
   redirect("/leave");
+}
+
+export async function updateLeaveRequest(
+  id: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = leaveRequestSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return zodToState(parsed.error);
+  const { leaveTypeId, startDate, endDate, halfDay, reason } = parsed.data;
+
+  try {
+    const me = await authorizeEmployee();
+    const existing = await prisma.leaveRequest.findFirst({
+      where: { id, organizationId: me.organizationId, employeeId: me.employeeId },
+      select: { status: true },
+    });
+    if (!existing) return { error: "Request not found." };
+    if (existing.status !== "PENDING") {
+      return { error: "Only pending requests can be edited." };
+    }
+
+    const leaveType = await getLeaveTypeInOrg(me.organizationId, leaveTypeId);
+    if (!leaveType.isActive) return { error: "That leave type is not active." };
+
+    const keys = await holidayKeys(me.organizationId);
+    const days = countLeaveDays(startDate, endDate, keys, halfDay);
+    if (days <= 0) {
+      return {
+        error: "The selected range has no working days (weekend/holiday only).",
+      };
+    }
+
+    if (leaveType.paid) {
+      const year = startDate.getFullYear();
+      const [balance, pendingAgg] = await Promise.all([
+        prisma.leaveBalance.findUnique({
+          where: {
+            employeeId_leaveTypeId_year: {
+              employeeId: me.employeeId,
+              leaveTypeId,
+              year,
+            },
+          },
+        }),
+        prisma.leaveRequest.aggregate({
+          where: {
+            employeeId: me.employeeId,
+            leaveTypeId,
+            status: "PENDING",
+            id: { not: id }, // exclude the request being edited
+            startDate: {
+              gte: new Date(year, 0, 1),
+              lte: new Date(year, 11, 31, 23, 59, 59),
+            },
+          },
+          _sum: { days: true },
+        }),
+      ]);
+      const allocated = balance?.allocatedDays ?? leaveType.defaultAllocationDays;
+      const used = balance?.usedDays ?? 0;
+      const available = allocated - used - (pendingAgg._sum.days ?? 0);
+      if (days > available) {
+        return {
+          error: `Not enough balance: ${days} day(s) requested, ${available} available.`,
+        };
+      }
+    }
+
+    await prisma.leaveRequest.updateMany({
+      where: { id, organizationId: me.organizationId, employeeId: me.employeeId, status: "PENDING" },
+      data: { leaveTypeId, startDate, endDate, days, halfDay, reason },
+    });
+    await writeAudit({
+      organizationId: me.organizationId,
+      userId: me.id,
+      action: "leave.request.update",
+      entityType: "LeaveRequest",
+      entityId: id,
+    });
+  } catch (e) {
+    return { error: messageFor(e) };
+  }
+
+  revalidatePath("/leave");
+  redirect("/leave");
+}
+
+// ---------------------------------------------------------------------------
+// HR: company holidays
+// ---------------------------------------------------------------------------
+
+export async function createHoliday(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = holidaySchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return zodToState(parsed.error);
+  try {
+    const user = await authorize("HR_MANAGER");
+    await prisma.holiday.create({
+      data: {
+        organizationId: user.organizationId,
+        name: parsed.data.name,
+        date: parsed.data.date,
+      },
+    });
+    await writeAudit({
+      organizationId: user.organizationId,
+      userId: user.id,
+      action: "holiday.create",
+      entityType: "Holiday",
+      metadata: { name: parsed.data.name },
+    });
+  } catch (e) {
+    return { error: messageFor(e) };
+  }
+  revalidatePath("/leave/holidays");
+  redirect("/leave/holidays");
+}
+
+export async function deleteHoliday(id: string): Promise<void> {
+  const user = await authorize("HR_MANAGER");
+  await prisma.holiday.deleteMany({
+    where: { id, organizationId: user.organizationId },
+  });
+  revalidatePath("/leave/holidays");
+  redirect("/leave/holidays");
 }
 
 // ---------------------------------------------------------------------------

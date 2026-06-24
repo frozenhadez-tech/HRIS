@@ -74,6 +74,7 @@ model Organization {
   benefitPlans       BenefitPlan[]
   benefitEnrollments BenefitEnrollment[]
   dependents         Dependent[]
+  holidays           Holiday[]
 }
 
 // ---------------------------------------------------------------------------
@@ -302,6 +303,7 @@ model LeaveRequest {
   startDate DateTime
   endDate   DateTime
   days      Float // working days requested
+  halfDay   Boolean @default(false) // single-day half-day request
   reason    String?
 
   status       LeaveRequestStatus @default(PENDING)
@@ -550,5 +552,20 @@ model BenefitEnrollment {
   updatedAt DateTime @updatedAt
 
   @@unique([employeeId, planId])
+  @@index([organizationId])
+}
+
+// Company holidays — excluded from leave working-day counts.
+model Holiday {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name String
+  date DateTime @db.Date
+
+  createdAt DateTime @default(now())
+
+  @@unique([organizationId, date])
   @@index([organizationId])
 }

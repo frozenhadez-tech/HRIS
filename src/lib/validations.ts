@@ -192,12 +192,18 @@ export const leaveRequestSchema = z
     leaveTypeId: z.string().min(1, "Select a leave type."),
     startDate: requiredDate,
     endDate: requiredDate,
+    halfDay: checkbox,
     reason: optionalText,
   })
   .refine((d) => d.endDate >= d.startDate, {
     message: "End date can't be before the start date.",
     path: ["endDate"],
   });
+
+export const holidaySchema = z.object({
+  name: z.string().trim().min(2, "Name is required."),
+  date: requiredDate,
+});
 
 export const leaveBalanceSchema = z.object({
   employeeId: z.string().min(1, "Select an employee."),

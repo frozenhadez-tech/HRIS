@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireEmployee } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
+import { createLeaveRequest } from "@/lib/actions/leave";
 import { PageHeader } from "@/components/ui/page-header";
-import { LeaveRequestForm } from "./leave-request-form";
+import { LeaveRequestForm } from "../leave-request-form";
 
 export default async function NewLeaveRequestPage() {
   const me = await requireEmployee();
@@ -13,7 +14,6 @@ export default async function NewLeaveRequestPage() {
     select: { id: true, name: true, paid: true },
   });
 
-  // No types to request against — send back to the leave hub.
   if (leaveTypes.length === 0) redirect("/leave");
 
   return (
@@ -22,7 +22,7 @@ export default async function NewLeaveRequestPage() {
         title="Request leave"
         description="Submit a new time-off request."
       />
-      <LeaveRequestForm leaveTypes={leaveTypes} />
+      <LeaveRequestForm action={createLeaveRequest} leaveTypes={leaveTypes} />
     </div>
   );
 }

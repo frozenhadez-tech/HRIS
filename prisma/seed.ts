@@ -349,6 +349,16 @@ async function main() {
     },
   });
 
+  // Company holidays (excluded from leave day counts).
+  await prisma.holiday.createMany({
+    data: [
+      { organizationId: org.id, name: "New Year's Day", date: new Date(Date.UTC(year, 0, 1)) },
+      { organizationId: org.id, name: "Independence Day", date: new Date(Date.UTC(year, 5, 12)) },
+      { organizationId: org.id, name: "Christmas Day", date: new Date(Date.UTC(year, 11, 25)) },
+    ],
+    skipDuplicates: true,
+  });
+
   console.log(`\nSeeded "${org.name}" with ${seq} employees and ${accounts.length} login accounts.`);
   console.log("Benefits: 3 plans, 1 dependent, 1 enrollment.");
   console.log("Time & attendance: 3 leave types, balances, leave requests, time entries, 2 shifts.");
