@@ -48,7 +48,7 @@ export function PayslipView({
   const c = (n: number) => formatCurrency(n, currency);
 
   return (
-    <div className="space-y-6">
+    <div className="payslip-doc space-y-6">
       <div className="border-b border-slate-200 pb-4 text-center">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">
           {orgName}
@@ -80,7 +80,7 @@ export function PayslipView({
         </CardBody>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="payslip-split grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Earnings" />
           <CardBody>

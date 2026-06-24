@@ -42,6 +42,35 @@ body {
     padding: 0 !important;
     margin: 0 !important;
   }
+  /* Neutralize the 100vh app-shell floor (min-h-screen) and html/body height so
+     a short slip doesn't overflow into a near-blank second page — in print, vh
+     measures the full page including the @page margins. */
+  html,
+  body,
+  .min-h-screen {
+    min-height: 0 !important;
+    height: auto !important;
+  }
+  /* A print page is narrower than the `lg` breakpoint, so lg:grid-cols-2 drops
+     out and Earnings/Deductions would stack — making the slip two pages and
+     pushing Employer contributions off page 1. Force the two-column layout
+     (minmax(0,1fr) so a long value can't widen the column past the page) and
+     keep each section whole so header → employer contributions fits one page. */
+  .payslip-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 1rem !important;
+  }
+  .payslip-doc > * + * {
+    margin-top: 1rem !important;
+  }
+  /* Avoid breaking inside each section (header + cards + the two inner columns),
+     but let the .payslip-split grid itself break so a page break can fall before
+     it rather than dumping the whole two-column block onto page 2. */
+  .payslip-doc > *:not(.payslip-split),
+  .payslip-split > * {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
   /* Keep background colors (net-pay highlight, badges). */
   * {
     -webkit-print-color-adjust: exact;
