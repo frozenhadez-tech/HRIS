@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     "Multi-tenant HRIS for managing employees, departments, and org structure.",
 };
 
+// Run server functions in Singapore (sin1) to sit next to the Neon database
+// (ap-southeast-1). Keeps the function<->DB round trip in single-digit ms
+// instead of crossing regions on every query.
+export const preferredRegion = "sin1";
+
 export default function RootLayout({
   children,
 }: Readonly<{

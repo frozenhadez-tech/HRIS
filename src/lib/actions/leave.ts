@@ -45,29 +45,32 @@ export async function createLeaveRequest(
     // Enforce balance only for paid leave types.
     if (leaveType.paid) {
       const year = startDate.getFullYear();
-      const balance = await prisma.leaveBalance.findUnique({
-        where: {
-          employeeId_leaveTypeId_year: {
+      // These two reads are independent — run them in one round trip.
+      const [balance, pendingAgg] = await Promise.all([
+        prisma.leaveBalance.findUnique({
+          where: {
+            employeeId_leaveTypeId_year: {
+              employeeId: me.employeeId,
+              leaveTypeId,
+              year,
+            },
+          },
+        }),
+        prisma.leaveRequest.aggregate({
+          where: {
             employeeId: me.employeeId,
             leaveTypeId,
-            year,
+            status: "PENDING",
+            startDate: {
+              gte: new Date(year, 0, 1),
+              lte: new Date(year, 11, 31, 23, 59, 59),
+            },
           },
-        },
-      });
+          _sum: { days: true },
+        }),
+      ]);
       const allocated = balance?.allocatedDays ?? leaveType.defaultAllocationDays;
       const used = balance?.usedDays ?? 0;
-      const pendingAgg = await prisma.leaveRequest.aggregate({
-        where: {
-          employeeId: me.employeeId,
-          leaveTypeId,
-          status: "PENDING",
-          startDate: {
-            gte: new Date(year, 0, 1),
-            lte: new Date(year, 11, 31, 23, 59, 59),
-          },
-        },
-        _sum: { days: true },
-      });
       const available = allocated - used - (pendingAgg._sum.days ?? 0);
       if (days > available) {
         return {
