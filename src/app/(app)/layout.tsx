@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { requireUser } from "@/lib/tenant";
 import { fullName } from "@/lib/utils";
-import { getLeaveReminders } from "@/lib/notifications";
+import { getReminders } from "@/lib/notifications";
 import { AppShell } from "@/components/nav/app-shell";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
   const name = user.employee ? fullName(user.employee) : user.email;
-  const reminders = await getLeaveReminders();
+  const reminders = await getReminders();
 
   return (
     <AppShell

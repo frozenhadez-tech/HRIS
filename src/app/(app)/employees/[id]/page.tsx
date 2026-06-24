@@ -5,13 +5,16 @@ import { Pencil, ArrowLeft } from "lucide-react";
 import { requireRole } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { can, ROLE_LABELS } from "@/lib/auth/rbac";
-import { deleteEmployee } from "@/lib/actions/employees";
+import { deleteEmployee, regularizeEmployee } from "@/lib/actions/employees";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DeleteButton } from "@/components/delete-button";
-import { EmployeeStatusBadge } from "@/components/status-badges";
+import {
+  EmployeeStatusBadge,
+  EmploymentStatusBadge,
+} from "@/components/status-badges";
 import { fullName, formatDate, formatCurrency } from "@/lib/utils";
 import { EMPLOYMENT_TYPE_LABELS } from "@/lib/constants";
 
@@ -73,6 +76,7 @@ export default async function EmployeeDetailPage({
                 {fullName(emp)}
               </h1>
               <EmployeeStatusBadge status={emp.status} />
+              <EmploymentStatusBadge status={emp.employmentStatus} />
             </div>
             <p className="text-sm text-slate-500">
               {emp.jobTitle ?? "No job title"}
@@ -81,6 +85,11 @@ export default async function EmployeeDetailPage({
           </div>
           {canManage && (
             <div className="flex items-center gap-2">
+              {emp.employmentStatus === "PROBATIONARY" && (
+                <form action={regularizeEmployee.bind(null, emp.id)}>
+                  <Button type="submit">Regularize</Button>
+                </form>
+              )}
               <Link
                 href={`/employees/${emp.id}/edit`}
                 className={buttonVariants("secondary")}
@@ -128,6 +137,9 @@ export default async function EmployeeDetailPage({
               <Info label="Type">
                 {EMPLOYMENT_TYPE_LABELS[emp.employmentType]}
               </Info>
+              <Info label="Employment status">
+                <EmploymentStatusBadge status={emp.employmentStatus} />
+              </Info>
               <Info label="Department">{emp.department?.name}</Info>
               <Info label="Reports to">
                 {emp.manager ? (
@@ -144,6 +156,12 @@ export default async function EmployeeDetailPage({
               </Info>
               <Info label="Termination date">
                 {emp.terminationDate ? formatDate(emp.terminationDate) : null}
+              </Info>
+              <Info label="Probation ends">
+                {emp.probationEndDate ? formatDate(emp.probationEndDate) : null}
+              </Info>
+              <Info label="Regularized">
+                {emp.regularizedAt ? formatDate(emp.regularizedAt) : null}
               </Info>
             </dl>
           </CardBody>

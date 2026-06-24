@@ -70,6 +70,8 @@ async function main() {
           : t.includes("senior")
             ? 60000
             : 38000;
+    const regAt = new Date(hireDate);
+    regAt.setMonth(regAt.getMonth() + 6);
     return prisma.employee.create({
       data: {
         organizationId: org.id,
@@ -90,6 +92,8 @@ async function main() {
         pagIbigNumber: `1211-${String(1000 + n).padStart(4, "0")}-${String(2000 + n).padStart(4, "0")}`,
         monthlySalary,
         monthlyAllowance: 2000,
+        employmentStatus: "REGULAR",
+        regularizedAt: regAt,
       },
     });
   };
@@ -357,6 +361,20 @@ async function main() {
       { organizationId: org.id, name: "Christmas Day", date: new Date(Date.UTC(year, 11, 25)) },
     ],
     skipDuplicates: true,
+  });
+
+  // One employee still on probation (ends ~20 days out) for the regularization reminder.
+  const probEnd = new Date();
+  probEnd.setUTCDate(probEnd.getUTCDate() + 20);
+  await prisma.employee.update({
+    where: { id: lucas.id },
+    data: {
+      employmentStatus: "PROBATIONARY",
+      probationEndDate: new Date(
+        Date.UTC(probEnd.getUTCFullYear(), probEnd.getUTCMonth(), probEnd.getUTCDate()),
+      ),
+      regularizedAt: null,
+    },
   });
 
   console.log(`\nSeeded "${org.name}" with ${seq} employees and ${accounts.length} login accounts.`);

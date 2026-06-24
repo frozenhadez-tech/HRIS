@@ -13,8 +13,10 @@ import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import {
   EMPLOYMENT_TYPES,
   EMPLOYEE_STATUSES,
+  EMPLOYMENT_STATUSES,
   EMPLOYMENT_TYPE_LABELS,
   EMPLOYEE_STATUS_LABELS,
+  EMPLOYMENT_STATUS_LABELS,
 } from "@/lib/constants";
 import { toDateInput } from "@/lib/utils";
 
@@ -105,6 +107,15 @@ export function EmployeeForm({
               ))}
             </Select>
           </Field>
+          <Field label="Employment status" htmlFor="employmentStatus" error={e.employmentStatus}>
+            <Select id="employmentStatus" name="employmentStatus" defaultValue={defaults?.employmentStatus ?? "PROBATIONARY"}>
+              {EMPLOYMENT_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {EMPLOYMENT_STATUS_LABELS[s]}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Status" htmlFor="status" error={e.status}>
             <Select id="status" name="status" defaultValue={defaults?.status ?? "ACTIVE"}>
               {EMPLOYEE_STATUSES.map((s) => (
@@ -136,6 +147,19 @@ export function EmployeeForm({
           </Field>
           <Field label="Hire date" htmlFor="hireDate" error={e.hireDate}>
             <Input id="hireDate" name="hireDate" type="date" defaultValue={toDateInput(defaults?.hireDate)} />
+          </Field>
+          <Field
+            label="Probation end date"
+            htmlFor="probationEndDate"
+            error={e.probationEndDate}
+            hint="Auto-set to hire date + 6 months if left blank for probationary staff."
+          >
+            <Input
+              id="probationEndDate"
+              name="probationEndDate"
+              type="date"
+              defaultValue={toDateInput(defaults?.probationEndDate)}
+            />
           </Field>
           <Field label="Termination date" htmlFor="terminationDate" error={e.terminationDate}>
             <Input id="terminationDate" name="terminationDate" type="date" defaultValue={toDateInput(defaults?.terminationDate)} />

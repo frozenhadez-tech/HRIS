@@ -1,5 +1,6 @@
 import type {
   EmploymentType,
+  EmploymentStatus,
   EmployeeStatus,
   UserStatus,
   LeaveRequestStatus,
@@ -70,6 +71,20 @@ export const DEPENDENT_RELATIONS = Object.keys(
 export const EMPLOYMENT_TYPES = Object.keys(
   EMPLOYMENT_TYPE_LABELS,
 ) as EmploymentType[];
+
+export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
+  PROBATIONARY: "Probationary",
+  REGULAR: "Regular",
+  CONTRACTUAL: "Contractual",
+  PROJECT_BASED: "Project-based",
+};
+
+export const EMPLOYMENT_STATUSES = Object.keys(
+  EMPLOYMENT_STATUS_LABELS,
+) as EmploymentStatus[];
+
+// Standard probation length (months) used to suggest the probation end date.
+export const PROBATION_MONTHS = 6;
 
 export const EMPLOYEE_STATUSES = Object.keys(
   EMPLOYEE_STATUS_LABELS,

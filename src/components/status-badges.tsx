@@ -1,5 +1,6 @@
 import type {
   EmployeeStatus,
+  EmploymentStatus,
   UserStatus,
   LeaveRequestStatus,
   PayrollStatus,
@@ -7,6 +8,7 @@ import type {
 import { Badge } from "./ui/badge";
 import {
   EMPLOYEE_STATUS_LABELS,
+  EMPLOYMENT_STATUS_LABELS,
   USER_STATUS_LABELS,
   LEAVE_STATUS_LABELS,
   PAYROLL_STATUS_LABELS,
@@ -28,6 +30,25 @@ const USER_TONE = {
 export function EmployeeStatusBadge({ status }: { status: EmployeeStatus }) {
   return (
     <Badge tone={EMPLOYEE_TONE[status]}>{EMPLOYEE_STATUS_LABELS[status]}</Badge>
+  );
+}
+
+const EMPLOYMENT_TONE = {
+  PROBATIONARY: "amber",
+  REGULAR: "green",
+  CONTRACTUAL: "blue",
+  PROJECT_BASED: "slate",
+} as const;
+
+export function EmploymentStatusBadge({
+  status,
+}: {
+  status: EmploymentStatus;
+}) {
+  return (
+    <Badge tone={EMPLOYMENT_TONE[status]}>
+      {EMPLOYMENT_STATUS_LABELS[status]}
+    </Badge>
   );
 }
 

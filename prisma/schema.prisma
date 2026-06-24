@@ -45,6 +45,13 @@ enum EmploymentType {
   TEMPORARY
 }
 
+enum EmploymentStatus {
+  PROBATIONARY
+  REGULAR
+  CONTRACTUAL
+  PROJECT_BASED
+}
+
 // ---------------------------------------------------------------------------
 // Tenant root
 // ---------------------------------------------------------------------------
@@ -164,11 +171,14 @@ model Employee {
   country      String?
 
   // Employment
-  jobTitle        String?
-  employmentType  EmploymentType @default(FULL_TIME)
-  status          EmployeeStatus @default(ACTIVE)
-  hireDate        DateTime?
-  terminationDate DateTime?
+  jobTitle         String?
+  employmentType   EmploymentType   @default(FULL_TIME)
+  employmentStatus EmploymentStatus @default(PROBATIONARY)
+  probationEndDate DateTime? // typically hireDate + 6 months
+  regularizedAt    DateTime? // when made a regular employee
+  status           EmployeeStatus   @default(ACTIVE)
+  hireDate         DateTime?
+  terminationDate  DateTime?
 
   departmentId String?
   department   Department? @relation("DeptEmployees", fields: [departmentId], references: [id])

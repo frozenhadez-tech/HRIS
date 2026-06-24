@@ -7,6 +7,7 @@ import { authorize } from "@/lib/tenant";
 import { writeAudit } from "@/lib/audit";
 import { employeeSchema } from "@/lib/validations";
 import { fullName } from "@/lib/utils";
+import { PROBATION_MONTHS } from "@/lib/constants";
 import type { ActionState } from "./state";
 import {
   zodToState,
@@ -14,6 +15,26 @@ import {
   assertDepartmentInOrg,
   assertEmployeeInOrg,
 } from "./_server";
+
+/** Default a probationary hire's probation end to hire date + 6 months. */
+function withProbationEnd<
+  T extends {
+    employmentStatus?: string;
+    probationEndDate?: Date | null;
+    hireDate?: Date | null;
+  },
+>(data: T): T {
+  if (
+    data.employmentStatus === "PROBATIONARY" &&
+    !data.probationEndDate &&
+    data.hireDate
+  ) {
+    const d = new Date(data.hireDate);
+    d.setMonth(d.getMonth() + PROBATION_MONTHS);
+    return { ...data, probationEndDate: d };
+  }
+  return data;
+}
 
 export async function createEmployee(
   _prev: ActionState,
@@ -30,7 +51,7 @@ export async function createEmployee(
     await assertEmployeeInOrg(user.organizationId, data.managerId);
 
     const created = await prisma.employee.create({
-      data: { organizationId: user.organizationId, ...data },
+      data: { organizationId: user.organizationId, ...withProbationEnd(data) },
     });
     await writeAudit({
       organizationId: user.organizationId,
@@ -69,7 +90,7 @@ export async function updateEmployee(
     // Scope the update to the tenant so no cross-org record can be edited.
     const result = await prisma.employee.updateMany({
       where: { id, organizationId: user.organizationId },
-      data,
+      data: withProbationEnd(data),
     });
     if (result.count === 0) return { error: "Employee not found." };
 
@@ -84,6 +105,24 @@ export async function updateEmployee(
     return { error: messageFor(e) };
   }
 
+  revalidatePath("/employees");
+  revalidatePath(`/employees/${id}`);
+  redirect(`/employees/${id}`);
+}
+
+export async function regularizeEmployee(id: string): Promise<void> {
+  const user = await authorize("HR_MANAGER");
+  await prisma.employee.updateMany({
+    where: { id, organizationId: user.organizationId },
+    data: { employmentStatus: "REGULAR", regularizedAt: new Date() },
+  });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "employee.regularize",
+    entityType: "Employee",
+    entityId: id,
+  });
   revalidatePath("/employees");
   revalidatePath(`/employees/${id}`);
   redirect(`/employees/${id}`);

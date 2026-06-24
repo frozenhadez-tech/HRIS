@@ -45,6 +45,13 @@ export const employeeStatusEnum = z.enum([
   "PENDING",
 ]);
 
+export const employmentStatusEnum = z.enum([
+  "PROBATIONARY",
+  "REGULAR",
+  "CONTRACTUAL",
+  "PROJECT_BASED",
+]);
+
 export const assignableRoleEnum = z.enum([
   "ORG_ADMIN",
   "HR_MANAGER",
@@ -91,9 +98,11 @@ export const employeeSchema = z.object({
   gender: optionalText,
   jobTitle: optionalText,
   employmentType: employmentTypeEnum,
+  employmentStatus: employmentStatusEnum,
   status: employeeStatusEnum,
   hireDate: optionalDate,
   terminationDate: optionalDate,
+  probationEndDate: optionalDate,
   departmentId: optionalId,
   managerId: optionalId,
   addressLine1: optionalText,
