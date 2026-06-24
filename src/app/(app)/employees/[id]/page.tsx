@@ -17,6 +17,8 @@ import {
 } from "@/components/status-badges";
 import { fullName, formatDate, formatCurrency } from "@/lib/utils";
 import { EMPLOYMENT_TYPE_LABELS } from "@/lib/constants";
+import { getLeaveCredits } from "@/lib/leave-credits";
+import { LeaveCreditCards } from "@/components/leave-credit-cards";
 
 function Info({ label, children }: { label: string; children?: ReactNode }) {
   return (
@@ -47,6 +49,13 @@ export default async function EmployeeDetailPage({
     },
   });
   if (!emp) notFound();
+
+  const year = new Date().getFullYear();
+  const leaveCredits = await getLeaveCredits(
+    user.organizationId,
+    emp.id,
+    year,
+  );
 
   const canManage = can.manageEmployees(user.role);
   const address = [
@@ -207,6 +216,19 @@ export default async function EmployeeDetailPage({
             </CardBody>
           </Card>
         )}
+
+        <Card className="lg:col-span-2">
+          <CardHeader
+            title="Leave credits"
+            description={`Remaining days for ${year}. Paid types draw from an allocation; unpaid types have no limit.`}
+          />
+          <CardBody>
+            <LeaveCreditCards
+              credits={leaveCredits}
+              emptyHint="No leave types configured yet."
+            />
+          </CardBody>
+        </Card>
 
         <Card>
           <CardHeader title="Account access" />

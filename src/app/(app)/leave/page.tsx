@@ -13,10 +13,11 @@ import { requireEmployee } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { can } from "@/lib/auth/rbac";
 import { cancelLeaveRequest } from "@/lib/actions/leave";
+import { getLeaveCredits } from "@/lib/leave-credits";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardBody } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { LeaveCreditCards } from "@/components/leave-credit-cards";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DeleteButton } from "@/components/delete-button";
 import { LeaveStatusBadge } from "@/components/status-badges";
@@ -30,29 +31,14 @@ export default async function LeavePage() {
   const year = new Date().getFullYear();
   const isHR = can.manageLeaveTypes(me.role);
 
-  const [types, balances, requests] = await Promise.all([
-    prisma.leaveType.findMany({
-      where: { organizationId: orgId, isActive: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.leaveBalance.findMany({ where: { employeeId, year } }),
+  const [credits, requests] = await Promise.all([
+    getLeaveCredits(orgId, employeeId, year),
     prisma.leaveRequest.findMany({
       where: { employeeId },
       include: { leaveType: { select: { name: true } } },
       orderBy: { createdAt: "desc" },
     }),
   ]);
-
-  const balanceByType = new Map(balances.map((b) => [b.leaveTypeId, b]));
-  const pendingByType = new Map<string, number>();
-  for (const r of requests) {
-    if (r.status === "PENDING" && r.startDate.getFullYear() === year) {
-      pendingByType.set(
-        r.leaveTypeId,
-        (pendingByType.get(r.leaveTypeId) ?? 0) + r.days,
-      );
-    }
-  }
 
   return (
     <div>
@@ -87,7 +73,7 @@ export default async function LeavePage() {
         }
       />
 
-      {types.length === 0 ? (
+      {credits.length === 0 ? (
         <EmptyState
           icon={<CalendarDays className="h-8 w-8" />}
           title="No leave types configured"
@@ -105,44 +91,7 @@ export default async function LeavePage() {
           }
         />
       ) : (
-        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {types.map((t) => {
-            const bal = balanceByType.get(t.id);
-            const allocated = bal?.allocatedDays ?? t.defaultAllocationDays;
-            const used = bal?.usedDays ?? 0;
-            const pending = pendingByType.get(t.id) ?? 0;
-            const available = allocated - used - pending;
-            return (
-              <Card key={t.id} className="p-5">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-900">{t.name}</h3>
-                  {t.paid ? (
-                    <Badge tone="indigo">Paid</Badge>
-                  ) : (
-                    <Badge tone="slate">Unpaid</Badge>
-                  )}
-                </div>
-                {t.paid ? (
-                  <>
-                    <p className="text-3xl font-semibold text-slate-900">
-                      {available}
-                      <span className="ml-1 text-sm font-normal text-slate-400">
-                        / {allocated} days
-                      </span>
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {used} used · {pending} pending
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    No balance limit — requests still need approval.
-                  </p>
-                )}
-              </Card>
-            );
-          })}
-        </div>
+        <LeaveCreditCards credits={credits} className="mb-6" />
       )}
 
       <Card>
