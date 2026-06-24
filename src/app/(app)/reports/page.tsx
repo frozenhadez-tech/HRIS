@@ -105,9 +105,19 @@ export default async function EmployeeReportPage() {
   const deptCounts = new Map<string, number>();
   let noDept = 0;
   let newHires = 0;
+  let separations = 0;
   let totalSalary = 0;
   let totalAllowance = 0;
   let activeCount = 0;
+  const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+  const tenureBands: Record<string, number> = {
+    "< 1 year": 0,
+    "1–2 years": 0,
+    "2–5 years": 0,
+    "5+ years": 0,
+  };
+  let tenureSum = 0;
+  let tenureCount = 0;
 
   for (const e of employees) {
     empStatusCounts[e.employmentStatus]++;
@@ -119,12 +129,27 @@ export default async function EmployeeReportPage() {
       noDept++;
     }
     if (e.hireDate && e.hireDate.getFullYear() === year) newHires++;
+    if (e.terminationDate && e.terminationDate.getFullYear() === year) {
+      separations++;
+    }
+    if (e.hireDate) {
+      const yrs = (now.getTime() - e.hireDate.getTime()) / MS_PER_YEAR;
+      tenureSum += yrs;
+      tenureCount++;
+      if (yrs < 1) tenureBands["< 1 year"]++;
+      else if (yrs < 2) tenureBands["1–2 years"]++;
+      else if (yrs < 5) tenureBands["2–5 years"]++;
+      else tenureBands["5+ years"]++;
+    }
     if (e.status === "ACTIVE") {
       totalSalary += e.monthlySalary;
       totalAllowance += e.monthlyAllowance;
       activeCount++;
     }
   }
+
+  const netChange = newHires - separations;
+  const avgTenure = tenureCount > 0 ? tenureSum / tenureCount : 0;
 
   const deptRows = [
     ...[...deptCounts.entries()]
@@ -144,6 +169,32 @@ export default async function EmployeeReportPage() {
     label: EMPLOYEE_STATUS_LABELS[s],
     count: statusCounts[s],
   })).filter((r) => r.count > 0);
+  const tenureRows = Object.entries(tenureBands)
+    .map(([label, count]) => ({ label, count }))
+    .filter((r) => r.count > 0);
+
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const regularizations = employees
+    .filter(
+      (e) =>
+        e.employmentStatus === "PROBATIONARY" &&
+        e.status !== "TERMINATED" &&
+        e.probationEndDate,
+    )
+    .sort(
+      (a, b) =>
+        (a.probationEndDate as Date).getTime() -
+        (b.probationEndDate as Date).getTime(),
+    )
+    .map((e) => ({
+      id: e.id,
+      name: fullName(e),
+      department: e.department?.name ?? "—",
+      end: e.probationEndDate as Date,
+      daysLeft: Math.ceil(
+        ((e.probationEndDate as Date).getTime() - now.getTime()) / DAY_MS,
+      ),
+    }));
 
   return (
     <div>
@@ -177,12 +228,15 @@ export default async function EmployeeReportPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            <Stat label="Total" value={total} />
+            <Stat label="Headcount" value={total} />
             <Stat label="Active" value={statusCounts.ACTIVE} />
-            <Stat label="On leave" value={statusCounts.ON_LEAVE} />
-            <Stat label="Probationary" value={empStatusCounts.PROBATIONARY} />
-            <Stat label="Regular" value={empStatusCounts.REGULAR} />
-            <Stat label={`New hires ${year}`} value={newHires} />
+            <Stat label={`Hires ${year}`} value={newHires} />
+            <Stat label={`Separations ${year}`} value={separations} />
+            <Stat
+              label={`Net ${year}`}
+              value={`${netChange > 0 ? "+" : ""}${netChange}`}
+            />
+            <Stat label="Avg tenure" value={`${avgTenure.toFixed(1)} yr`} />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -209,6 +263,12 @@ export default async function EmployeeReportPage() {
               keyLabel="Status"
               rows={statusRows}
               total={total}
+            />
+            <Breakdown
+              title="Tenure"
+              keyLabel="Length of service"
+              rows={tenureRows}
+              total={tenureCount}
             />
           </div>
 
@@ -239,6 +299,49 @@ export default async function EmployeeReportPage() {
                     {formatCurrency(totalSalary + totalAllowance, currency)}
                   </p>
                 </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {regularizations.length > 0 && (
+            <Card className="report-card">
+              <CardHeader
+                title="Probationary — due for regularization"
+                description="Review each before their probation ends."
+              />
+              <CardBody className="p-0">
+                <Table>
+                  <THead>
+                    <TR>
+                      <TH>Employee</TH>
+                      <TH>Department</TH>
+                      <TH>Probation ends</TH>
+                      <TH className="text-right">Status</TH>
+                    </TR>
+                  </THead>
+                  <TBody>
+                    {regularizations.map((r) => (
+                      <TR key={r.id}>
+                        <TD className="font-medium text-slate-900">{r.name}</TD>
+                        <TD>{r.department}</TD>
+                        <TD className="whitespace-nowrap">
+                          {formatDate(r.end)}
+                        </TD>
+                        <TD className="text-right whitespace-nowrap">
+                          {r.daysLeft < 0 ? (
+                            <span className="font-medium text-red-600">
+                              {Math.abs(r.daysLeft)}d overdue
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">
+                              in {r.daysLeft}d
+                            </span>
+                          )}
+                        </TD>
+                      </TR>
+                    ))}
+                  </TBody>
+                </Table>
               </CardBody>
             </Card>
           )}
