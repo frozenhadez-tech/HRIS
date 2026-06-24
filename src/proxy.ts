@@ -8,15 +8,17 @@ export async function proxy(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
 
-  const isAuthPage = AUTH_PATHS.includes(pathname);
+  // Public paths: auth pages + the keep-warm health probe (no session needed).
+  const isPublic =
+    AUTH_PATHS.includes(pathname) || pathname === "/api/health";
 
-  // Everything that isn't an auth page requires a (cryptographically) valid
-  // session token. We do NOT bounce signed-in users away from /login here: the
-  // token can be valid yet reference a user that no longer exists (e.g. after a
-  // db re-seed). The login/signup pages do a DB-backed check and redirect real
-  // users to the dashboard — keeping that decision out of the edge proxy avoids
-  // a redirect loop between the proxy and the page guards.
-  if (!session && !isAuthPage) {
+  // Everything else requires a (cryptographically) valid session token. We do
+  // NOT bounce signed-in users away from /login here: the token can be valid yet
+  // reference a user that no longer exists (e.g. after a db re-seed). The
+  // login/signup pages do a DB-backed check and redirect real users to the
+  // dashboard — keeping that decision out of the edge proxy avoids a redirect
+  // loop between the proxy and the page guards.
+  if (!session && !isPublic) {
     const url = new URL("/login", req.url);
     if (pathname !== "/") url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
