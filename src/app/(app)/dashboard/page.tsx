@@ -63,25 +63,25 @@ export default async function DashboardPage({
       label: "Total employees",
       value: totalEmployees,
       icon: Users,
-      tone: "bg-indigo-50 text-indigo-600",
+      tone: "bg-white/5 text-sky-300 ring-1 ring-sky-400/20",
     },
     {
       label: "Active",
       value: activeEmployees,
       icon: UserCheck,
-      tone: "bg-green-50 text-green-600",
+      tone: "bg-white/5 text-emerald-300 ring-1 ring-emerald-400/20",
     },
     {
       label: "Departments",
       value: departmentCount,
       icon: Building2,
-      tone: "bg-amber-50 text-amber-600",
+      tone: "bg-white/5 text-amber-300 ring-1 ring-amber-400/20",
     },
     {
       label: "User accounts",
       value: userCount,
       icon: ShieldCheck,
-      tone: "bg-blue-50 text-blue-600",
+      tone: "bg-white/5 text-cyan-300 ring-1 ring-cyan-400/20",
     },
   ];
 

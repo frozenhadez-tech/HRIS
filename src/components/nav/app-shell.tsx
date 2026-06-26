@@ -220,7 +220,7 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen">
+    <div className="hris-app min-h-screen">
       {/* Desktop sidebar */}
       <aside className="app-sidebar fixed inset-y-0 left-0 hidden w-64 border-r border-slate-200 bg-white lg:block">
         <SidebarBody

@@ -10,15 +10,15 @@ html {
 }
 
 body {
-  background-color: #f8fafc; /* slate-50 */
-  color: #0f172a; /* slate-900 */
+  background-color: #0a1830; /* deep navy base; .hris-app re-skins the app */
+  color: #0f172a; /* slate-900 — app content re-skins to light via .hris-app */
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Consistent focus ring for keyboard users. */
 :focus-visible {
-  outline: 2px solid #6366f1; /* indigo-500 */
+  outline: 2px solid #3b8bff;
   outline-offset: 2px;
 }
 
@@ -127,5 +127,151 @@ body {
   .auth-rise,
   .auth-float {
     animation: none;
+  }
+}
+
+/* =========================================================================
+   Dark "analytics" theme — scoped to the in-app shell (.hris-app), screen only
+   (print keeps the light Tailwind palette so payslips/reports print on white).
+   Re-skins the neutral slate/white/indigo palette to a deep-navy surface set
+   with cyan-blue accents over a faint network field.
+   ========================================================================= */
+@media screen {
+  .hris-app {
+    --surface: rgba(13, 31, 61, 0.72);
+    --raise: rgba(255, 255, 255, 0.045);
+    --raise-2: rgba(255, 255, 255, 0.08);
+    --line: rgba(120, 172, 236, 0.18);
+    --line-soft: rgba(120, 172, 236, 0.1);
+    --ink: #e9f1ff;
+    --ink-2: #cdddf3;
+    --ink-3: #b1c4e2;
+    --ink-4: #92a7c6;
+    --ink-5: #7688aa;
+    --accent: #2f86ff;
+    --accent-hi: #1f6fe0;
+    --accent-soft: rgba(47, 134, 255, 0.16);
+    --accent-ink: #63b3ff;
+
+    color: var(--ink-3);
+    background-color: #0a1830;
+    background-image: radial-gradient(
+        120% 90% at 82% -8%,
+        rgba(34, 96, 190, 0.38) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        90% 80% at 8% 112%,
+        rgba(18, 66, 146, 0.32) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        circle at center,
+        rgba(132, 182, 240, 0.1) 1px,
+        transparent 1.5px
+      );
+    background-size: 100% 100%, 100% 100%, 30px 30px;
+    background-attachment: fixed;
+  }
+
+  /* Surfaces */
+  .hris-app .bg-white {
+    background-color: var(--surface);
+  }
+  .hris-app .bg-white\/90 {
+    background-color: rgba(10, 22, 45, 0.82);
+  }
+  .hris-app .bg-slate-50 {
+    background-color: var(--raise);
+  }
+  .hris-app .bg-slate-100,
+  .hris-app .bg-slate-200 {
+    background-color: var(--raise-2);
+  }
+  .hris-app .hover\:bg-slate-50:hover {
+    background-color: rgba(120, 172, 236, 0.08);
+  }
+  .hris-app .hover\:bg-slate-100:hover {
+    background-color: rgba(120, 172, 236, 0.12);
+  }
+
+  /* The fixed sidebar + mobile top bar read as a touch more solid. */
+  .hris-app .app-sidebar {
+    background-color: rgba(9, 21, 43, 0.92);
+  }
+  .hris-app .app-topbar {
+    background-color: rgba(9, 21, 43, 0.85);
+  }
+
+  /* Cards: faint inner highlight + soft drop instead of the flat light shadow. */
+  .hris-app .shadow-sm {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 12px 34px -16px rgba(0, 8, 24, 0.8);
+  }
+
+  /* Text */
+  .hris-app .text-slate-900 {
+    color: var(--ink);
+  }
+  .hris-app .text-slate-800,
+  .hris-app .text-slate-700 {
+    color: var(--ink-2);
+  }
+  .hris-app .text-slate-600 {
+    color: var(--ink-3);
+  }
+  .hris-app .text-slate-500 {
+    color: var(--ink-4);
+  }
+  .hris-app .text-slate-400,
+  .hris-app .text-slate-300 {
+    color: var(--ink-5);
+  }
+
+  /* Borders + dividers */
+  .hris-app .border-slate-200,
+  .hris-app .border-slate-300 {
+    border-color: var(--line);
+  }
+  .hris-app .border-slate-100 {
+    border-color: var(--line-soft);
+  }
+  .hris-app .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--line-soft);
+  }
+  .hris-app .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--line);
+  }
+
+  /* Form controls */
+  .hris-app input,
+  .hris-app textarea,
+  .hris-app select {
+    color-scheme: dark;
+  }
+  .hris-app .placeholder\:text-slate-400::placeholder {
+    color: var(--ink-5);
+  }
+
+  /* Accent: indigo -> cyan-blue */
+  .hris-app .bg-indigo-600 {
+    background-color: var(--accent);
+  }
+  .hris-app .hover\:bg-indigo-700:hover {
+    background-color: var(--accent-hi);
+  }
+  .hris-app .bg-indigo-50 {
+    background-color: var(--accent-soft);
+  }
+  .hris-app .text-indigo-600,
+  .hris-app .text-indigo-700 {
+    color: var(--accent-ink);
+  }
+  .hris-app .hover\:text-indigo-700:hover {
+    color: #93c8ff;
+  }
+  .hris-app .border-indigo-500,
+  .hris-app .focus\:border-indigo-500:focus {
+    border-color: var(--accent);
   }
 }
