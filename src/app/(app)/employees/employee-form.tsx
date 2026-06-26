@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { Employee } from "@prisma/client";
 import { emptyState, type ActionState } from "@/lib/actions/state";
 import { Field } from "@/components/ui/field";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Button } from "@/components/ui/button";

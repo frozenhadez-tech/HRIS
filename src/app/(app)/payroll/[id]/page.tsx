@@ -9,7 +9,7 @@ import {
   deletePayrollRun,
 } from "@/lib/actions/payroll";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardBody } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { DeleteButton } from "@/components/delete-button";
 import { PayrollStatusBadge } from "@/components/status-badges";

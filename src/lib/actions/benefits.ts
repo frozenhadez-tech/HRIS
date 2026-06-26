@@ -191,6 +191,13 @@ export async function deleteDependent(id: string): Promise<void> {
   await prisma.dependent.deleteMany({
     where: { id, organizationId: me.organizationId, employeeId: me.employeeId },
   });
+  await writeAudit({
+    organizationId: me.organizationId,
+    userId: me.id,
+    action: "dependent.delete",
+    entityType: "Dependent",
+    entityId: id,
+  });
   revalidatePath("/benefits/dependents");
   redirect("/benefits/dependents");
 }

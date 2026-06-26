@@ -132,7 +132,7 @@ export default async function EmployeeReportPage() {
     if (e.terminationDate && e.terminationDate.getFullYear() === year) {
       separations++;
     }
-    if (e.hireDate) {
+    if (e.hireDate && e.status !== "TERMINATED") {
       const yrs = (now.getTime() - e.hireDate.getTime()) / MS_PER_YEAR;
       tenureSum += yrs;
       tenureCount++;

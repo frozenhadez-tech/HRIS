@@ -2,7 +2,7 @@ import { hoursBetween } from "./utils";
 
 // Philippine payroll computation. Statutory rates/brackets live in PH_PAYROLL so
 // they can be updated in one place when the government changes them. All amounts
-// are computed monthly, then prorated to the pay period by `periodFraction`.
+// are computed monthly, then prorated to the pay period inside computePayslip.
 
 export type PayFrequency = "MONTHLY" | "SEMI_MONTHLY" | "DAILY";
 
@@ -59,15 +59,6 @@ export function computeMonthlyWithholdingTax(monthlyTaxable: number): number {
     if (monthlyTaxable > b.over) chosen = b;
   }
   return round2(chosen.base + (monthlyTaxable - chosen.over) * chosen.rate);
-}
-
-export function periodFraction(
-  frequency: PayFrequency,
-  workingDaysInPeriod: number,
-): number {
-  if (frequency === "MONTHLY") return 1;
-  if (frequency === "SEMI_MONTHLY") return 0.5;
-  return workingDaysInPeriod / PH_PAYROLL.standardWorkdaysPerMonth; // DAILY
 }
 
 export interface PayslipInput {

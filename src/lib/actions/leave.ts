@@ -270,6 +270,13 @@ export async function deleteHoliday(id: string): Promise<void> {
   await prisma.holiday.deleteMany({
     where: { id, organizationId: user.organizationId },
   });
+  await writeAudit({
+    organizationId: user.organizationId,
+    userId: user.id,
+    action: "holiday.delete",
+    entityType: "Holiday",
+    entityId: id,
+  });
   revalidatePath("/leave/holidays");
   redirect("/leave/holidays");
 }

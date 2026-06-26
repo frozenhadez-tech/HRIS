@@ -60,23 +60,6 @@ export function slugify(input: string): string {
 
 // --- Time & attendance helpers ---
 
-/** Count working days (Mon–Fri) inclusive between two dates. */
-export function countWeekdays(start: Date, end: Date): number {
-  const s = new Date(start);
-  s.setHours(0, 0, 0, 0);
-  const e = new Date(end);
-  e.setHours(0, 0, 0, 0);
-  if (e < s) return 0;
-  let count = 0;
-  const cursor = new Date(s);
-  while (cursor <= e) {
-    const day = cursor.getDay();
-    if (day !== 0 && day !== 6) count += 1;
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return count;
-}
-
 /** Decimal hours between two instants (never negative). */
 export function hoursBetween(a: Date, b: Date): number {
   return Math.max(0, (b.getTime() - a.getTime()) / 3_600_000);

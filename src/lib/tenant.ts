@@ -36,14 +36,6 @@ export async function authorize(min: UserRole): Promise<CurrentUser> {
 }
 
 /**
- * Scope a Prisma `where` clause to the current tenant. Always spread this into
- * tenant-scoped queries so no query can leak across organizations.
- */
-export function tenantScope(organizationId: string) {
-  return { organizationId };
-}
-
-/**
  * Require an authenticated user whose account is linked to an employee profile
  * (needed for self-service: leave, attendance, schedule). Redirects otherwise.
  */
