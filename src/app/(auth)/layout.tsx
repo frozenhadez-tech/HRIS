@@ -1,15 +1,13 @@
 import type { ReactNode } from "react";
-import { Logo } from "@/components/logo";
+import { AuthBackdrop } from "./auth-backdrop";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-1 flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="mb-8 flex justify-center">
-          <Logo />
-        </div>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <AuthBackdrop />
+      <div className="relative z-10 w-full max-w-md">
         {children}
-        <p className="mt-8 text-center text-xs text-slate-400">
+        <p className="mt-6 text-center text-xs text-white/65">
           Human Resources Information System
         </p>
       </div>

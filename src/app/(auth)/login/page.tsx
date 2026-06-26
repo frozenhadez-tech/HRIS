@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { Card } from "@/components/ui/card";
+import { AuthCard, AuthBrand } from "../auth-shell";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
@@ -9,23 +9,21 @@ export default async function LoginPage() {
   if (await getCurrentUser()) redirect("/dashboard");
 
   return (
-    <Card className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-slate-900">Welcome back</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Sign in to your HRIS account.
-        </p>
+    <AuthCard>
+      <AuthBrand />
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">Login</h1>
+      <div className="mt-6">
+        <LoginForm />
       </div>
-      <LoginForm />
-      <p className="mt-6 text-center text-sm text-slate-500">
-        Don&apos;t have an organization yet?{" "}
+      <p className="mt-6 text-center text-sm text-white/75">
+        Don&apos;t have an organization?{" "}
         <Link
           href="/signup"
-          className="font-medium text-indigo-600 hover:text-indigo-700"
+          className="font-semibold text-white underline-offset-4 hover:underline"
         >
-          Create one
+          Register for free
         </Link>
       </p>
-    </Card>
+    </AuthCard>
   );
 }

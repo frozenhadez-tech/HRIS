@@ -3,43 +3,45 @@
 import { useActionState } from "react";
 import { loginAction } from "@/lib/actions/auth";
 import { emptyState } from "@/lib/actions/state";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Alert } from "@/components/ui/alert";
-import { SubmitButton } from "@/components/ui/submit-button";
+import {
+  AuthField,
+  AuthError,
+  AuthSubmit,
+  PasswordInput,
+  authInputClass,
+} from "../auth-ui";
 
 export function LoginForm() {
   const [state, action] = useActionState(loginAction, emptyState);
 
   return (
-    <form action={action} className="space-y-4">
-      {state.error && <Alert tone="error">{state.error}</Alert>}
-      <Field label="Email" htmlFor="email" error={state.fieldErrors?.email}>
-        <Input
+    <form action={action} className="space-y-5">
+      {state.error && <AuthError>{state.error}</AuthError>}
+      <AuthField label="Email" htmlFor="email" error={state.fieldErrors?.email}>
+        <input
           id="email"
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="you@company.com"
+          placeholder="username@gmail.com"
           required
+          className={authInputClass}
         />
-      </Field>
-      <Field
+      </AuthField>
+      <AuthField
         label="Password"
         htmlFor="password"
         error={state.fieldErrors?.password}
       >
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
+          placeholder="Password"
           required
         />
-      </Field>
-      <SubmitButton className="w-full" pendingText="Signing in…">
-        Sign in
-      </SubmitButton>
+      </AuthField>
+      <AuthSubmit pendingText="Signing in…">Sign in</AuthSubmit>
     </form>
   );
 }
