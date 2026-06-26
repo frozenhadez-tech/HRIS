@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth/current-user";
+import { getCurrentUser, type CurrentUser } from "@/lib/auth/current-user";
 import { roleAtLeast } from "@/lib/auth/rbac";
 import { nextWorkingDay, leaveDateKey } from "@/lib/leave";
 import { fullName, formatDate } from "@/lib/utils";
@@ -19,13 +19,10 @@ const LEAVE_WINDOW_DAYS = 3; // leaves ending within N days
 const PROBATION_WINDOW_DAYS = 30; // probation ending within N days
 
 /**
- * Derived reminders (no table): leaves ending soon (with return-to-office date)
- * and probationary employees due for regularization review. Cached per request
- * so the nav badge and the pages share one set of queries.
+ * Shared time-window + tenant/role scope for reminders, so the lightweight
+ * badge count and the full reminder list always agree. Pure (no queries).
  */
-export const getReminders = cache(async (): Promise<Reminder[]> => {
-  const user = await getCurrentUser();
-  if (!user) return [];
+function reminderScope(user: CurrentUser) {
   const orgId = user.organizationId;
   const myEmpId = user.employeeId;
   const isHR = roleAtLeast(user.role, "HR_MANAGER");
@@ -52,31 +49,74 @@ export const getReminders = cache(async (): Promise<Reminder[]> => {
     };
   else leaveScope = { employeeId: myEmpId ?? "__none__" };
 
+  const leaveWhere: Prisma.LeaveRequestWhereInput = {
+    organizationId: orgId,
+    status: "APPROVED",
+    endDate: { gte: today, lte: leaveWindow },
+    ...leaveScope,
+  };
+
+  // Probation reminders are an evaluator task — managers (their reports) + HR.
+  const probationWhere: Prisma.EmployeeWhereInput | null = isMgr
+    ? {
+        organizationId: orgId,
+        status: "ACTIVE",
+        employmentStatus: "PROBATIONARY",
+        probationEndDate: { lte: probationWindow },
+        ...(isHR ? {} : { managerId: myEmpId ?? "__none__" }),
+      }
+    : null;
+
+  return { orgId, myEmpId, today, leaveWhere, probationWhere };
+}
+
+/**
+ * Lightweight reminder count for the nav badge. Runs on EVERY page (in the app
+ * layout), so it does two cheap COUNTs only — no record fetch, joins, holiday
+ * lookup, or message building. Matches getReminders().length exactly.
+ */
+export const getReminderCount = cache(async (): Promise<number> => {
+  const user = await getCurrentUser();
+  if (!user) return 0;
+  const { leaveWhere, probationWhere } = reminderScope(user);
+
+  const [leaveCount, probationCount] = await Promise.all([
+    prisma.leaveRequest.count({ where: leaveWhere }),
+    probationWhere
+      ? prisma.employee.count({ where: probationWhere })
+      : Promise.resolve(0),
+  ]);
+  return leaveCount + probationCount;
+});
+
+/**
+ * Derived reminders (no table): leaves ending soon (with return-to-office date)
+ * and probationary employees due for regularization review. Cached per request
+ * so the notifications page and dashboard card share one set of queries. Use
+ * getReminderCount() when only the badge number is needed.
+ */
+export const getReminders = cache(async (): Promise<Reminder[]> => {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  const { orgId, myEmpId, today, leaveWhere, probationWhere } =
+    reminderScope(user);
+
   const [leaveRequests, holidays, probationers] = await Promise.all([
     prisma.leaveRequest.findMany({
-      where: {
-        organizationId: orgId,
-        status: "APPROVED",
-        endDate: { gte: today, lte: leaveWindow },
-        ...leaveScope,
-      },
+      where: leaveWhere,
       include: {
         employee: { select: { firstName: true, lastName: true } },
         leaveType: { select: { name: true } },
       },
       orderBy: { endDate: "asc" },
     }),
-    prisma.holiday.findMany({ where: { organizationId: orgId }, select: { date: true } }),
-    // Probation reminders are an evaluator task — managers (their reports) + HR.
-    isMgr
+    prisma.holiday.findMany({
+      where: { organizationId: orgId },
+      select: { date: true },
+    }),
+    probationWhere
       ? prisma.employee.findMany({
-          where: {
-            organizationId: orgId,
-            status: "ACTIVE",
-            employmentStatus: "PROBATIONARY",
-            probationEndDate: { lte: probationWindow },
-            ...(isHR ? {} : { managerId: myEmpId ?? "__none__" }),
-          },
+          where: probationWhere,
           select: {
             id: true,
             firstName: true,

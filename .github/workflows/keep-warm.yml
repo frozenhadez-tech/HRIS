@@ -3,12 +3,18 @@ name: Keep warm
 # Pings the health endpoint to stop the Neon free-tier database from
 # auto-suspending (it scales to zero after ~5 min idle, which causes a slow
 # cold start on the next visit). Free + unlimited on this public repo.
+#
+# GitHub heavily throttles "*/5" schedules — in practice runs land ~60-110 min
+# apart, not every 5 min. Neon suspends at 5 min idle, so a short run leaves big
+# cold windows. To compensate, each run actively pings every 4 min for ~50 min,
+# so a single launch keeps things warm for most of the gap until the next one.
+# For bulletproof coverage use an external uptime monitor (see README).
 on:
   schedule:
-    - cron: "*/5 * * * *" # every 5 minutes (GitHub Actions minimum)
+    - cron: "*/5 * * * *" # ask for every 5 min (GitHub runs it when it can)
   workflow_dispatch: {} # allow manual runs
 
-# Don't pile up overlapping runs.
+# Let an in-progress long run keep going; don't cancel it when a new one lands.
 concurrency:
   group: keep-warm
   cancel-in-progress: false
@@ -16,12 +22,13 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
+    timeout-minutes: 55
     steps:
-      - name: Ping /api/health a few times
+      - name: Ping /api/health every 4 min for ~50 min
         run: |
           URL="https://hris-mocha.vercel.app/api/health"
-          for i in 1 2 3; do
+          for i in $(seq 1 13); do
             code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$URL" || echo "000")
-            echo "ping $i -> HTTP $code"
-            if [ "$i" -lt 3 ]; then sleep 90; fi
+            echo "$(date -u +%H:%M:%S) ping $i -> HTTP $code"
+            if [ "$i" -lt 13 ]; then sleep 240; fi
           done
